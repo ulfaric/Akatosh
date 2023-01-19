@@ -8,8 +8,7 @@ from .timeline import Timeline
 
 class Universe:
     _id: int
-    _primary_timeline: Timeline
-    _timelines: List[Timeline]
+    _timeline: Timeline
     _till: Union[int, float]
 
     def __new__(cls):
@@ -19,24 +18,27 @@ class Universe:
 
     def __init__(self) -> None:
         self._id = uuid4().int
-        self._primary_timeline = Timeline()
-        self._timelines = list()
+        self._timeline = Timeline()
         self._till = int()
 
     def simulate(self, till: Union[int, float] = inf) -> None:
         self._till = till
-        while self.primary_timeline.now < self.till:
-            self.primary_timeline.forward(self.till)
-            if len(self.primary_timeline.events) == 0:
+        while self.timeline.now < self.till:
+            self.timeline.forward(self.till)
+            if len(self.timeline.events) == 0:
                 break
 
     @property
-    def primary_timeline(self) -> Timeline:
-        return self._primary_timeline
+    def timeline(self) -> Timeline:
+        return self._timeline
 
     @property
     def till(self) -> Union[int, float]:
         return self._till
 
+    @property
+    def now(self) -> Union[int, float]:
+        return self.timeline.now
 
-UNIVERSE = Universe()
+
+Mundus = Universe()

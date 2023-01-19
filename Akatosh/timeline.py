@@ -22,40 +22,13 @@ class Timeline:
         self._actors = list()
         self._events = list()
 
-    # def schedule(self, actor: Actor):
-    #     self.events.append(actor)
-    #     self.events.sort(key=lambda event: event.priority)
-    #     self.events.sort(key=lambda event: event.scheduled_time)
-    #     actor._status = 'scheduled'
-
-    # def forward(self, till: Union[int, float]):
-    #     while True:
-    #         if len(self.events) != 0:
-    #             next_event = self.events.pop(0)
-    #             if self.now < next_event.scheduled_time:
-    #                 self._time = next_event.scheduled_time
-    #             if next_event.scheduled_time < till:
-    #                 if inspect.isgeneratorfunction(next_event.action):
-    #                     try:
-    #                         next(next_event.action())
-    #                     except StopIteration:
-    #                         next_event._status = 'finished'
-    #                 elif next_event.action is not None:
-    #                     try:
-    #                         next_event.action()
-    #                     except Exception as e:
-    #                         print(e)
-    #             else:
-    #                 break
-    #         else:
-    #             break
-
     def schedule(self, actor: Actor):
-        event = Event(at=actor.scheduled_time, priority=actor.priority, actor=actor)
+        event = Event(at=actor.time, priority=actor.priority, actor=actor)
         self.events.append(event)
         self.events.sort(key=lambda event: event.priority)
         self.events.sort(key=lambda event: event.at)
-        actor._status = 'scheduled'
+        if actor.status.count('scheduled') == 0:
+            actor.status.append('scheduled')
 
     def forward(self, till: Union[int, float]):
         while True:
@@ -64,21 +37,26 @@ class Timeline:
                 if self.now < next_event.at:
                     self._time = next_event.at
                 if next_event.at < till:
-                    if inspect.isgeneratorfunction(next_event.actor.action):
+                    if inspect.isgeneratorfunction(next_event.actor.perform):
                         try:
-                            next(next_event.actor.action())
+                            next(next_event.actor.perform())
                         except StopIteration:
-                            next_event.actor._status = 'finished'
-                    elif next_event.actor.action is not None:
+                            if next_event.actor.onhold is False:
+                                next_event.actor.status.append('completed')
+                    else:
                         try:
-                            next_event.actor.action()
+                            next_event.actor.perform()
                         except Exception as e:
                             print(e)
                 else:
                     break
             else:
                 break
-
+            
+    def print_events(self):
+        for event in self.events:
+            print(f"{event.at}\t{event.priority}\t{event.actor}\t{event.actor.status}")
+            
     @property
     def now(self):
         return self._time

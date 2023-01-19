@@ -1,32 +1,29 @@
 from re import T
-from Akatosh import UNIVERSE, Actor
+from Akatosh import Mundus, Actor
 
 class mom(Actor):
 
-    def __init__(self, at, priority, name) -> None:
-        super().__init__(at=at, priority=priority)
+    def __init__(self, at, step, till, priority, name) -> None:
+        super().__init__(at=at, step=step, till=till, priority=priority)
         self._name = name
         self._num_children = 0
 
     def action(self):
-        while self.timeline.now<4:
-            c = child(at=self.timeline.now, priority=-self._num_children, name=f"Child-{self._num_children}")
-            self._num_children += 1
-            print(f"Time: {self.timeline.now}:\t{self._name} delivered a child {c._name}.")
-            yield self.wait(1)
+        c = child(at=self.timeline.now, step=1, till=10, priority=-self._num_children, name=f"Child-{self._num_children}")
+        self._num_children += 1
+        print(f"Time: {Mundus.now}\tEvent Priority: {self.priority}:\t{self._name} delivered a child {c._name}.")
 
 class child(Actor):
 
-    def __init__(self, at, priority, name) -> None:
-        super().__init__(at=at, priority=priority)
+    def __init__(self, at, step, till, priority, name) -> None:
+        super().__init__(at=at, step=step, till=till, priority=priority)
         self._name = name
 
     def action(self):
-        while True:
-            print(f"Time: {self.timeline.now}:\t{self._name}\tis playing.")
-            yield self.wait(1)
+        print(f"Time: {Mundus.now}\tEvent Priority: {self.priority}:\t{self._name}\tis playing.")
 
-mom = mom(at=0, priority=0, name="Mom")
-father = Actor(at=4, priority=0, action=lambda: print("Father is working."))
+m = mom(at=0, step=1, till=5, priority=0, name="Mom")
+father = Actor(after=m, priority=0, action=lambda: print(f"Time: {Mundus.now}\tEvent Priority: {father.priority}:\tFather is working."))
 
-UNIVERSE.simulate(10)
+Mundus.simulate(10)
+print(father.status)
