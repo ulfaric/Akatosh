@@ -80,13 +80,14 @@ class Actor:
     def perform(self):
         if self.active:
             if self.onhold:
-                self._time = self.after.time
+                while self.after.completed is False:
+                    self._time = self.after.time
+                    yield self.timeline.schedule(self)
                 self.timeline.schedule(self)
-                if self.after.status.count("completed") != 0:
-                    self.status.remove("onhold")
+                self.status.remove("onhold")
             else:
                 if self.step is None and self.till is None:
-                    self.action()
+                    yield self.action()
                 elif self.step is None and self.till is not None:
                     raise AttributeError(f"Actor {self.id} has no step size defined.")
                 elif self.step is not None and self.till is None:
@@ -148,3 +149,7 @@ class Actor:
     @property
     def onhold(self):
         return "onhold" in self.status
+
+    @property
+    def completed(self):
+        return "completed" in self.status
