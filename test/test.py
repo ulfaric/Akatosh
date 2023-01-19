@@ -11,7 +11,7 @@ class mom(Actor):
     def action(self):
         c = child(at=self.timeline.now, step=1, till=10, priority=-self._num_children, name=f"Child-{self._num_children}")
         self._num_children += 1
-        print(f"Time: {Mundus.now}\tEvent Priority: {self.priority}:\t{self._name} delivered a child {c._name}.")
+        print(f"Time: {Mundus.now}\tEvent Priority: {self.priority}:\t{self._name} picks up a child {c._name}.")
 
 class child(Actor):
 
@@ -20,10 +20,11 @@ class child(Actor):
         self._name = name
 
     def action(self):
-        print(f"Time: {Mundus.now}\tEvent Priority: {self.priority}:\t{self._name}\tis playing.")
+        print(f"Time: {Mundus.now}\tEvent Priority: {self.priority}:\t{self._name}\tis playing at home.")
 
 m = mom(at=0, step=1, till=5, priority=0, name="Mom")
-father = Actor(after=m, priority=0, action=lambda: print(f"Time: {Mundus.now}\tEvent Priority: {father.priority}:\tFather is working."))
+father = Actor(after=m, priority=0, action=lambda: print(f"Time: {Mundus.now}\tEvent Priority: {father.priority}:\tFather comes back home."))
+uncle = Actor(after=father, step=1, priority=0, action=lambda: print(f"Time: {Mundus.now}\tEvent Priority: {uncle.priority}:\tUncle comes to vist."))
 
 Mundus.simulate(10)
-print(father.status)
+
