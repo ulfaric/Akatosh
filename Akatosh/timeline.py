@@ -36,7 +36,7 @@ class Timeline:
                 next_event = self.events.pop(0)
                 if self.now < next_event.at:
                     self._time = next_event.at
-                if next_event.at < till:
+                if next_event.at <= till:
                     if inspect.isgeneratorfunction(next_event.actor.perform):
                         try:
                             next(next_event.actor.perform())

@@ -23,7 +23,7 @@ class Universe:
 
     def simulate(self, till: Union[int, float] = inf) -> None:
         self._till = till
-        while self.timeline.now < self.till:
+        while self.timeline.now <= self.till:
             self.timeline.forward(self.till)
             if len(self.timeline.events) == 0:
                 break

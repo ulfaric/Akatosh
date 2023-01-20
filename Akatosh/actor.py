@@ -76,47 +76,43 @@ class Actor:
         if self.onhold is False:
             self.timeline.schedule(self)
 
-    def reschedule(self) -> None:
-        if callable(self.step):
-            self._time += self.step()
-        else:
-            self._time += self.step
-        if self.time < self.till:
-            self.timeline.schedule(self)
-        else:
-            return
-
     def perform(self):
-        if self.active:
-            if self.step is None and self.till is None:
+        if self.step is None and self.till is None:
+            if self.active:
                 self.action()
-            elif self.step is None and self.till is not None:
-                raise AttributeError(f"Actor {self.id} has no step size defined.")
-            elif self.step is not None and self.till is None:
-                self._till = inf
-                while self.time <= self.till:
+        elif self.step is None and self.till is not None:
+            raise AttributeError(f"Actor {self.id} has no step size defined.")
+        elif self.step is not None and self.till is None:
+            self._till = inf
+            while self.time < self.till:
+                if self.active:
                     self.action()
-                    if callable(self.step):
-                        self._time += self.step()
-                    else:
-                        self._time += self.step
-                    if self.time < self.till:
-                        yield self.timeline.schedule(self)
-                    else:
-                        break
-            elif self.step is not None and self.till is not None:
-                if callable(self.till):
-                    self._till = self.till()
-                while self.time <= self.till:
+                if callable(self.step):
+                    self._time += self.step()
+                else:
+                    self._time += self.step
+                yield self.timeline.schedule(self)
+            if self.active:
+                self.action()
+        elif self.step is not None and self.till is not None:
+            if callable(self.till):
+                self._till = self.till()
+            while self.time < self.till:
+                if self.active:
                     self.action()
-                    if callable(self.step):
-                        self._time += self.step()
-                    else:
-                        self._time += self.step
-                    if self.time < self.till:
-                        yield self.timeline.schedule(self)
-                    else:
-                        break
+                if callable(self.step):
+                    self._time += self.step()
+                else:
+                    self._time += self.step
+                yield self.timeline.schedule(self)
+            if self.active:
+                self.action()
+
+    def deactivate(self):
+        if "active" in self.status:
+            self.status.remove("active")
+        if "inactive" not in self.status:
+            self.status.append("inactive")
 
     @property
     def id(self):
