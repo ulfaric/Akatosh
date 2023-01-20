@@ -1,3 +1,4 @@
+from lib2to3.pgen2.token import RPAR
 from re import T
 from Akatosh import Mundus, Actor
 
@@ -23,8 +24,8 @@ class child(Actor):
         print(f"Time: {Mundus.now}\tEvent Priority: {self.priority}:\t{self._name}\tis playing at home.")
 
 m = mom(at=0, step=1, till=5, priority=0, name="Mom")
-father = Actor(after=m, priority=0, action=lambda: print(f"Time: {Mundus.now}\tEvent Priority: {father.priority}:\tFather comes back home."))
-uncle = Actor(after=father, step=1, priority=0, action=lambda: print(f"Time: {Mundus.now}\tEvent Priority: {uncle.priority}:\tUncle comes to vist."))
+father = Actor(after=m, priority=-1, action=lambda: print(f"Time: {Mundus.now}\tEvent Priority: {father.priority}:\tFather comes back home."))
+uncle = Actor(after=father, step=1, till=7, priority=0, action=lambda: print(f"Time: {Mundus.now}\tEvent Priority: {uncle.priority}:\tUncle comes to vist."))
 
 Mundus.simulate(10)
-
+print(father.status)

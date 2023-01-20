@@ -41,11 +41,19 @@ class Timeline:
                         try:
                             next(next_event.actor.perform())
                         except StopIteration:
-                            if next_event.actor.onhold is False:
-                                next_event.actor.status.append('completed')
+                            next_event.actor.status.append('completed')
+                            for actor in next_event.actor.followers:
+                                actor.status.remove('onhold')
+                                actor._time = next_event.actor.time
+                                self.schedule(actor)
                     else:
                         try:
                             next_event.actor.perform()
+                            next_event.actor.status.append('completed')
+                            for actor in next_event.actor.followers:
+                                actor.status.remove('onhold')
+                                actor._time = self.now
+                                self.schedule(actor)
                         except Exception as e:
                             print(e)
                 else:

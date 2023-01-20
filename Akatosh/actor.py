@@ -20,6 +20,7 @@ class Actor:
 
     _time: Union[int, float]
     _status: List[str]
+    _followers: List[Actor]
 
     def __init__(
         self,
@@ -49,8 +50,13 @@ class Actor:
         # assign the priority to this actor
         self._priority = priority
 
-        # assign the waiting targer to this actor
-        self._after = after
+        # initialize the follower list
+        self._followers = list()
+
+        # assign the waiting target to this actor
+        if after is not None:
+            self._after = after
+            after.followers.append(self)
 
         # initialize the time
         self._time = at
@@ -67,40 +73,50 @@ class Actor:
             self.status.append("onhold")
 
         # schedule the actor onto timeline
-        if self.active:
+        if self.onhold is False:
             self.timeline.schedule(self)
 
-    def wait(self) -> None:
+    def reschedule(self) -> None:
         if callable(self.step):
             self._time += self.step()
         else:
             self._time += self.step
-        self.timeline.schedule(self)
+        if self.time < self.till:
+            self.timeline.schedule(self)
+        else:
+            return
 
     def perform(self):
         if self.active:
-            if self.onhold:
-                while self.after.completed is False:
-                    self._time = self.after.time
-                    yield self.timeline.schedule(self)
-                self.timeline.schedule(self)
-                self.status.remove("onhold")
-            else:
-                if self.step is None and self.till is None:
-                    yield self.action()
-                elif self.step is None and self.till is not None:
-                    raise AttributeError(f"Actor {self.id} has no step size defined.")
-                elif self.step is not None and self.till is None:
-                    self._till = inf
-                    while self.time < self.till:
-                        self.action()
-                        yield self.wait()
-                elif self.step is not None and self.till is not None:
-                    if callable(self.till):
-                        self._till = self.till()
-                    while self.time < self.till:
-                        self.action()
-                        yield self.wait()
+            if self.step is None and self.till is None:
+                self.action()
+            elif self.step is None and self.till is not None:
+                raise AttributeError(f"Actor {self.id} has no step size defined.")
+            elif self.step is not None and self.till is None:
+                self._till = inf
+                while self.time <= self.till:
+                    self.action()
+                    if callable(self.step):
+                        self._time += self.step()
+                    else:
+                        self._time += self.step
+                    if self.time < self.till:
+                        yield self.timeline.schedule(self)
+                    else:
+                        break
+            elif self.step is not None and self.till is not None:
+                if callable(self.till):
+                    self._till = self.till()
+                while self.time <= self.till:
+                    self.action()
+                    if callable(self.step):
+                        self._time += self.step()
+                    else:
+                        self._time += self.step
+                    if self.time < self.till:
+                        yield self.timeline.schedule(self)
+                    else:
+                        break
 
     @property
     def id(self):
@@ -153,3 +169,7 @@ class Actor:
     @property
     def completed(self):
         return "completed" in self.status
+
+    @property
+    def followers(self):
+        return self._followers
