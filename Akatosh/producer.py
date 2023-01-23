@@ -174,7 +174,6 @@ class Producer:
     def action(self):
         for _ in range(self.production_rate):
             self.inventory.append(self.product(**self.product_kargs))
-        print(f"Time {self.timeline.now}\t{self.label} has {len(self.inventory)} {self.product.__name__}.")
 
     def deactivate(self):
         if "active" in self.status:

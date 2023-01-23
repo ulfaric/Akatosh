@@ -26,7 +26,6 @@ class User(Actor):
                 print(
                     f"{self.name} releases 10 units of resource, usage {res.claimed_quantity/res.capacity}."
                 )
-                print(res.claims)
 
 
 u1 = User(name="User1", at=0, step=1, till=15, priority=0)
