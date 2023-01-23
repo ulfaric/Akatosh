@@ -1,9 +1,15 @@
 from __future__ import annotations
-from typing import Generator, List, Optional, Union, Callable
+from tkinter import W
+from typing import Generator, List, Optional, Union, Callable, TYPE_CHECKING
 from uuid import uuid4
 from math import inf
+import warnings
 
-from Akatosh import Event, Timeline, Mundus
+from Akatosh import Timeline, Mundus
+
+if TYPE_CHECKING:
+    from Akatosh import Resource
+    from Akatosh import Producer
 
 
 class Actor:
@@ -57,6 +63,10 @@ class Actor:
         if after is not None:
             self._after = after
             after.followers.append(self)
+            if after.priority > self.priority:
+                warnings.warn(
+                    message = f"Actor {self.id} has a lower priority than its waiting target {after.id}."
+                )
 
         # initialize the time
         self._time = at
@@ -77,11 +87,14 @@ class Actor:
             self.timeline.schedule(self)
 
     def perform(self):
+        # non-continuous actor
         if self.step is None and self.till is None:
             if self.active:
                 self.action()
+        # continuous actor but misses step size
         elif self.step is None and self.till is not None:
             raise AttributeError(f"Actor {self.id} has no step size defined.")
+        # continuous actor with step size but no end time
         elif self.step is not None and self.till is None:
             self._till = inf
             while self.time < self.till:
@@ -94,6 +107,7 @@ class Actor:
                 yield self.timeline.schedule(self)
             if self.active:
                 self.action()
+        # continuous actor with step size and end time
         elif self.step is not None and self.till is not None:
             if callable(self.till):
                 self._till = self.till()
@@ -113,6 +127,18 @@ class Actor:
             self.status.remove("active")
         if "inactive" not in self.status:
             self.status.append("inactive")
+
+    def request(self, resource: Resource, amount: Union[int, float] = 1) -> bool:
+        resource.distribute(self, amount)
+
+    def release(self, resource: Resource, amount: Optional[int | float] = None) -> bool:
+        if amount is None:
+            resource.release(self)
+        else:
+            resource.release(self, amount)
+
+    def consume(self, producer: Producer, amount: Optional[int | float] = None) -> bool:
+        producer.distribute(self, amount)
 
     @property
     def id(self):
