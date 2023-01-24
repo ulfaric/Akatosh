@@ -41,7 +41,6 @@ class Timeline:
                         try:
                             next(next_event.actor.perform())
                         except StopIteration:
-                            next_event.actor.status.append('completed')
                             for actor in next_event.actor.followers:
                                 actor.status.remove('onhold')
                                 actor._time = next_event.actor.time
@@ -49,7 +48,6 @@ class Timeline:
                     else:
                         try:
                             next_event.actor.perform()
-                            next_event.actor.status.append('completed')
                             for actor in next_event.actor.followers:
                                 actor.status.remove('onhold')
                                 actor._time = self.now
