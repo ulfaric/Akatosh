@@ -161,3 +161,7 @@ class Resource:
     @property
     def users(self):
         return [claim.user for claim in self.claims]
+
+    @property
+    def  utilization(self) -> Union[int, float]:
+        return self.claimed_quantity / self.capacity

@@ -1,10 +1,10 @@
 [project]
 name = "Akatosh"
-version = "1.1.0"
+version = "1.1.3"
 authors = [
   { name="Yifei Ren", email="ryf0510@live.com" },
 ]
-description = "A simple implement for MCTS algorithm."
+description = "A simple implement for discrete events simulation."
 readme = "README.md"
 requires-python = ">=3.7"
 classifiers = [

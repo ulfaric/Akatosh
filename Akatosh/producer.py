@@ -5,10 +5,7 @@ from uuid import uuid4
 import warnings
 from math import inf
 
-from Akatosh import Timeline, Mundus
-
-if TYPE_CHECKING:
-    from Akatosh import Actor
+from Akatosh import Timeline, Mundus, Actor
 
 
 class Consumer:
