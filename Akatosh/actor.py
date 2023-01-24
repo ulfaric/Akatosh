@@ -82,7 +82,7 @@ class Actor:
             self.status.append("onhold")
 
         # schedule the actor onto timeline
-        if self.onhold is False:
+        if self.onhold is False and self.active is True:
             self.timeline.schedule(self)
 
     def perform(self):
