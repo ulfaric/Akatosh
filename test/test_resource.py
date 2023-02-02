@@ -20,13 +20,13 @@ class User(Actor):
                 print(
                     f"{self.name} requests 10 units of resource, usage {res.claimed_quantity/res.capacity}."
                 )
-                print(res.claims)
             if res.available_quantity <= 50:
-                self.release(res, 10)
+                self.release(res)
                 print(
-                    f"{self.name} releases 10 units of resource, usage {res.claimed_quantity/res.capacity}."
+                    f"{self.name} releases current claimed units of resource, usage {res.claimed_quantity/res.capacity}."
                 )
 
 
 u1 = User(name="User1", at=0, step=1, till=15, priority=0)
+u2 = User(name="User2", at=0, step=1, till=15, priority=0)
 Mundus.simulate(15)

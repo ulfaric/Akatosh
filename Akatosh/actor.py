@@ -1,7 +1,7 @@
 from __future__ import annotations
 from typing import Generator, List, Optional, Union, Callable, TYPE_CHECKING
 from uuid import uuid4
-from math import inf
+from math import inf, round
 import warnings
 
 from Akatosh import Timeline, Mundus
@@ -64,13 +64,24 @@ class Actor:
             after.followers.append(self)
             if after.priority > self.priority:
                 warnings.warn(
-                    message = f"Actor {self.id} has a lower priority than its waiting target {after.id}."
+                    message=f"Actor {self.id} has a lower priority than its waiting target {after.id}."
                 )
 
         # initialize the time
-        self._time = at
-        self._step = step
-        self._till = till
+        if callable(at):
+            self._time = round(at(), 3)
+        else:
+            self._time = round(at, 3)
+
+        if callable(step):
+            self._step = step
+        else:
+            self._step = round(step, 3)
+
+        if callable(till):
+            self._till = till
+        else:
+            self._till = round(till, 3)
 
         # initialize the status
         self._status = list()
@@ -100,21 +111,21 @@ class Actor:
                 while self.time < self.till:
                     self.action()
                     if callable(self.step):
-                        self._time += self.step()
+                        self._time += round(self.step(), 3)
                     else:
-                        self._time += self.step
+                        self._time += round(self.step, 3)
                     yield self.timeline.schedule(self)
                 self.action()
             # continuous actor with step size and end time
             elif self.step is not None and self.till is not None:
                 if callable(self.till):
-                    self._till = self.till()
+                    self._till = round(self.till(), 3)
                 while self.time < self.till:
                     self.action()
                     if callable(self.step):
-                        self._time += self.step()
+                        self._time += round(self.step(), 3)
                     else:
-                        self._time += self.step
+                        self._time += round(self.step, 3)
                     yield self.timeline.schedule(self)
                 self.action()
                 self.status.append("completed")
@@ -134,8 +145,6 @@ class Actor:
             self.status.append("active")
             self._time = self.timeline.now
             self.timeline.schedule(self)
-
-
 
     def request(self, resource: Resource, amount: Union[int, float] = 1) -> bool:
         resource.distribute(self, amount)
