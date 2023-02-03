@@ -1,7 +1,7 @@
 from __future__ import annotations
 from typing import Generator, List, Optional, Union, Callable, TYPE_CHECKING
 from uuid import uuid4
-from math import inf, round
+from math import inf
 import warnings
 
 from Akatosh import Timeline, Mundus
@@ -75,17 +75,21 @@ class Actor:
 
         if callable(step):
             self._step = step
+        elif step is None:
+            self._step = step
         else:
             self._step = round(step, 3)
 
         if callable(till):
             self._till = till
-        else:
+        elif till is not None:
             self._till = round(till, 3)
+        else:
+            self._till = till
 
         # initialize the status
         self._status = list()
-        if active:
+        if active and after is None:
             self.status.append("active")
         else:
             self.status.append("inactive")
@@ -98,7 +102,7 @@ class Actor:
 
     def perform(self):
         # non-continuous actor
-        if self.active:
+        if self.active and self.onhold is False:
             if self.step is None and self.till is None:
                 self.action()
                 self.status.append("completed")
@@ -136,15 +140,36 @@ class Actor:
         else:
             self.status.remove("active")
             self.status.append("inactive")
+            if self.time == self.till:
+                self.status.append("completed")
+            else:
+                self.status.append("onhold")        
+            for actor in self.followers:
+                if actor.onhold:
+                    actor.status.remove('onhold')
+                    # if actor.inactive:
+                    actor.status.remove('inactive')
+                    actor.status.append('active')
+                    actor._time = self.time
+                    self.timeline.schedule(actor)
 
-    def activate(self):
+    def activate(self, force: bool = True):
         if self.active:
             return
         else:
-            self.status.remove("inactive")
-            self.status.append("active")
-            self._time = self.timeline.now
-            self.timeline.schedule(self)
+            if force:
+                self.status.remove("inactive")
+                self.status.remove("onhold")
+                self.status.append("active")
+                self._time = self.timeline.now
+                self.timeline.schedule(self)
+            else:
+                if self.after.completed:
+                    self.status.remove("inactive")
+                    self.status.remove("onhold")
+                    self.status.append("active")
+                    self._time = self.timeline.now
+                    self.timeline.schedule(self)
 
     def request(self, resource: Resource, amount: Union[int, float] = 1) -> bool:
         resource.distribute(self, amount)
@@ -205,6 +230,10 @@ class Actor:
     @property
     def onhold(self):
         return "onhold" in self.status
+
+    @property
+    def scheduled(self):
+        return "scheduled" in self.status
 
     @property
     def completed(self):
