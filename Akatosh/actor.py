@@ -147,7 +147,6 @@ class Actor:
             for actor in self.followers:
                 if actor.onhold:
                     actor.status.remove('onhold')
-                    # if actor.inactive:
                     actor.status.remove('inactive')
                     actor.status.append('active')
                     actor._time = self.time
@@ -159,14 +158,16 @@ class Actor:
         else:
             if force:
                 self.status.remove("inactive")
-                self.status.remove("onhold")
+                if self.onhold:
+                    self.status.remove("onhold")
                 self.status.append("active")
                 self._time = self.timeline.now
                 self.timeline.schedule(self)
             else:
                 if self.after.completed:
                     self.status.remove("inactive")
-                    self.status.remove("onhold")
+                    if self.onhold:
+                        self.status.remove("onhold")
                     self.status.append("active")
                     self._time = self.timeline.now
                     self.timeline.schedule(self)

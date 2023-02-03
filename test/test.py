@@ -12,7 +12,7 @@ class mom(Actor):
         self._num_children += 1
         print(f"Time: {Mundus.now}\tEvent Priority: {self.priority}:\t{self._name} picks up a child {c._name}.")
 
-        if self.timeline.now >= 11:
+        if self.timeline.now >= 3:
             self.deactivate()
 
 class child(Actor):
