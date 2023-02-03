@@ -21,7 +21,7 @@ class Actor:
     _step: Union[int, float, Callable]
     _till: Union[int, float]
     _active: bool
-    _after: Actor
+    _after: Optional[List[Actor]]
 
     _time: Union[int, float]
     _status: List[str]
@@ -36,7 +36,7 @@ class Actor:
         step: Optional[int | float | Callable] = None,
         till: Optional[int | float | Callable] = None,
         active: bool = True,
-        after: Optional[Actor] = None,
+        after: Optional[Actor | List[Actor]] = None,
     ) -> None:
 
         # generate a unique id for this actor
@@ -60,11 +60,26 @@ class Actor:
 
         # assign the waiting target to this actor
         if after is not None:
-            self._after = after
-            after.followers.append(self)
-            if after.priority > self.priority:
-                warnings.warn(
-                    message=f"Actor {self.id} has a lower priority than its waiting target {after.id}."
+            if isinstance(after, Actor):
+                self._after = [after]
+                after.followers.append(self)
+                if after.priority > self.priority:
+                    warnings.warn(
+                        message=f"Actor {self.id} has a lower priority than its waiting target {after.id}."
+                    )
+                self._waits = [True]
+            elif isinstance(after, list):
+                self._after = after
+                self._waits = [True] * len(after)
+                for actor in after:
+                    actor.followers.append(self)
+                    if actor.priority > self.priority:
+                        warnings.warn(
+                            message=f"Actor {self.id} has a lower priority than its waiting target {actor.id}."
+                        )
+            else:
+                raise TypeError(
+                    f"Actor {self.id} has a wrong type of waiting target."
                 )
 
         # initialize the time
@@ -146,11 +161,15 @@ class Actor:
                 self.status.append("onhold")        
             for actor in self.followers:
                 if actor.onhold:
-                    actor.status.remove('onhold')
-                    actor.status.remove('inactive')
-                    actor.status.append('active')
-                    actor._time = self.time
-                    self.timeline.schedule(actor)
+                    for i, target in enumerate(actor.after):
+                        if target is self:
+                            actor._waits[i] = False
+                    if all(actor._waits) is False:
+                        actor.status.remove('onhold')
+                        actor.status.remove('inactive')
+                        actor.status.append('active')
+                        actor._time = self.time
+                        self.timeline.schedule(actor)
 
     def activate(self, force: bool = True):
         if self.active:
@@ -164,7 +183,7 @@ class Actor:
                 self._time = self.timeline.now
                 self.timeline.schedule(self)
             else:
-                if self.after.completed:
+                if all([x.completed for x in self.after]) is True:
                     self.status.remove("inactive")
                     if self.onhold:
                         self.status.remove("onhold")

@@ -30,7 +30,8 @@ class child(Actor):
 
 m = mom(at=0, step=1, priority=0, name="Mom")
 father = Actor(after=m, priority=-1, action=lambda: print(f"Time: {Mundus.now}\tEvent Priority: {father.priority}:\tFather comes back home."))
-uncle = Actor(after=father, step=1, till=10, priority=0, action=lambda: print(f"Time: {Mundus.now}\tEvent Priority: {uncle.priority}:\tUncle comes to vist."))
+grandpa = Actor(after=m, step=1, till=10, priority=-1, action=lambda: print(f"Time: {Mundus.now}\tEvent Priority: {grandpa.priority}:\tGrandpa comes back home."))
+uncle = Actor(after=[father, grandpa], step=1, till=10, priority=0, action=lambda: print(f"Time: {Mundus.now}\tEvent Priority: {uncle.priority}:\tUncle comes to vist."))
 
 Mundus.simulate(10)
 print(m.status)
