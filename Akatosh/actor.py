@@ -67,10 +67,8 @@ class Actor:
                     warnings.warn(
                         message=f"Actor {self.id} has a lower priority than its waiting target {after.id}."
                     )
-                self._waits = [True]
             elif isinstance(after, list):
                 self._after = after
-                self._waits = [True] * len(after)
                 for actor in after:
                     actor.followers.append(self)
                     if actor.priority > self.priority:
@@ -78,9 +76,7 @@ class Actor:
                             message=f"Actor {self.id} has a lower priority than its waiting target {actor.id}."
                         )
             else:
-                raise TypeError(
-                    f"Actor {self.id} has a wrong type of waiting target."
-                )
+                raise TypeError(f"Actor {self.id} has a wrong type of waiting target.")
 
         # initialize the time
         if callable(at):
@@ -121,60 +117,84 @@ class Actor:
             if self.step is None and self.till is None:
                 self.action()
                 self.status.append("completed")
+                for actor in self.followers:
+                    if actor.onhold:
+                        actor.activate(force=False)
             # continuous actor but misses step size
             elif self.step is None and self.till is not None:
                 raise AttributeError(f"Actor {self.id} has no step size defined.")
             # continuous actor with step size but no end time
             elif self.step is not None and self.till is None:
                 self._till = inf
-                while self.time < self.till:
+                while True:
                     self.action()
+                    # if this is the last step, activate all followers
+                    if self.time == self.till:
+                        self.status.append("completed")
+                        for actor in self.followers:
+                            if actor.onhold:
+                                actor.activate(force=False)
                     if callable(self.step):
                         self._time += round(self.step(), 3)
                     else:
                         self._time += round(self.step, 3)
-                    yield self.timeline.schedule(self)
-                self.action()
+                    if self.time <= self.till:
+                        yield self.timeline.schedule(self)
+                    else:
+                        break
+
             # continuous actor with step size and end time
             elif self.step is not None and self.till is not None:
                 if callable(self.till):
                     self._till = round(self.till(), 3)
-                while self.time < self.till:
+                while True:
                     self.action()
+                    # if this is the last step, activate all followers
+                    if self.time == self.till:
+                        self.status.append("completed")
+                        for actor in self.followers:
+                            if actor.onhold:
+                                actor.activate(force=False)
                     if callable(self.step):
                         self._time += round(self.step(), 3)
                     else:
                         self._time += round(self.step, 3)
-                    yield self.timeline.schedule(self)
-                self.action()
-                self.status.append("completed")
+                    if self.time <= self.till:
+                        yield self.timeline.schedule(self)
+                    else:
+                        break
+
+            
 
     def deactivate(self):
+        # if the actor is already inactive, do nothing
         if self.inactive:
             return
         else:
+            # deactivate the actor
             self.status.remove("active")
             self.status.append("inactive")
             if self.time == self.till:
                 self.status.append("completed")
             else:
-                self.status.append("onhold")        
+                self.status.append("onhold")
+            
+            # activate all followers    
             for actor in self.followers:
                 if actor.onhold:
-                    for i, target in enumerate(actor.after):
-                        if target is self:
-                            actor._waits[i] = False
-                    if all(actor._waits) is False:
-                        actor.status.remove('onhold')
-                        actor.status.remove('inactive')
-                        actor.status.append('active')
-                        actor._time = self.time
-                        self.timeline.schedule(actor)
+                    actor.activate()
+
+            # remove all events associated with this actor
+            for event in self.timeline.events[:]:
+                if event.actor.id == self.id:
+                    self.timeline.events.remove(event)
 
     def activate(self, force: bool = True):
+        # if the actor is already active, do nothing
         if self.active:
             return
         else:
+            # activate the actor if force is True
             if force:
                 self.status.remove("inactive")
                 if self.onhold:
@@ -183,6 +203,7 @@ class Actor:
                 self._time = self.timeline.now
                 self.timeline.schedule(self)
             else:
+                # activate the actor if all waiting targets are completed
                 if all([x.completed for x in self.after]) is True:
                     self.status.remove("inactive")
                     if self.onhold:

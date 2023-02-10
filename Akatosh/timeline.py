@@ -46,31 +46,32 @@ class Timeline:
                         try:
                             next(next_event.actor.perform())
                         except StopIteration:
-                            for actor in next_event.actor.followers:
-                                if actor.onhold:
-                                    for i, target in enumerate(actor.after):
-                                        if target is next_event.actor:
-                                            actor._waits[i] = False
-                                    if all(actor._waits) is False:
-                                        actor.status.remove('onhold')
-                                        actor.status.remove('inactive')
-                                        actor.status.append('active')
-                                        actor._time = self.now
-                                        self.schedule(actor)
+                            pass
+                            # for actor in next_event.actor.followers:
+                            #     if actor.onhold:
+                            #         for i, target in enumerate(actor.after):
+                            #             if target is next_event.actor:
+                            #                 actor._waits[i] = False
+                            #         if all(actor._waits) is False:
+                            #             actor.status.remove('onhold')
+                            #             actor.status.remove('inactive')
+                            #             actor.status.append('active')
+                            #             actor._time = self.now
+                            #             self.schedule(actor)
                     else:
                         try:
                             next_event.actor.perform()
-                            for actor in next_event.actor.followers:
-                                if actor.onhold:
-                                    for i, target in enumerate(actor.after):
-                                        if target is next_event.actor:
-                                            actor._waits[i] = False
-                                    if all(actor._waits) is False:
-                                        actor.status.remove('onhold')
-                                        actor.status.remove('inactive')
-                                        actor.status.append('active')
-                                        actor._time = self.now
-                                        self.schedule(actor)
+                            # for actor in next_event.actor.followers:
+                            #     if actor.onhold:
+                            #         for i, target in enumerate(actor.after):
+                            #             if target is next_event.actor:
+                            #                 actor._waits[i] = False
+                            #         if all(actor._waits) is False:
+                            #             actor.status.remove('onhold')
+                            #             actor.status.remove('inactive')
+                            #             actor.status.append('active')
+                            #             actor._time = self.now
+                            #             self.schedule(actor)
                         except Exception as e:
                             print(e)
                 else:
