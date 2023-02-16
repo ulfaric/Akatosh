@@ -117,6 +117,7 @@ class Actor:
             if self.step is None and self.till is None:
                 self.action()
                 self.status.append("completed")
+                self.status.append("terminated")
                 for actor in self.followers:
                     if actor.onhold:
                         actor.activate(force=False)
@@ -131,6 +132,7 @@ class Actor:
                     # if this is the last step, activate all followers
                     if self.time == self.till:
                         self.status.append("completed")
+                        self.status.append("terminated")
                         for actor in self.followers:
                             if actor.onhold:
                                 actor.activate(force=False)
@@ -152,6 +154,7 @@ class Actor:
                     # if this is the last step, activate all followers
                     if self.time == self.till:
                         self.status.append("completed")
+                        self.status.append("terminated")
                         for actor in self.followers:
                             if actor.onhold:
                                 actor.activate(force=False)
@@ -166,7 +169,7 @@ class Actor:
 
             
 
-    def deactivate(self):
+    def deactivate(self, terminate: bool = True):
         # if the actor is already inactive, do nothing
         if self.inactive:
             return
@@ -174,10 +177,14 @@ class Actor:
             # deactivate the actor
             self.status.remove("active")
             self.status.append("inactive")
-            if self.time == self.till:
-                self.status.append("completed")
+            if terminate:
+                self.status.append("terminated")
             else:
-                self.status.append("onhold")
+                if self.time == self.till:
+                    self.status.append("completed")
+                    self.status.append("terminated")
+                else:
+                    self.status.append("onhold")
             
             # activate all followers    
             for actor in self.followers:
@@ -191,7 +198,10 @@ class Actor:
 
     def activate(self, force: bool = True):
         # if the actor is already active, do nothing
-        if self.active:
+        if self.terminated:
+            warnings.warn(message=f"Actor {self.id} is terminated and cannot be activated.")
+            return
+        elif self.active:
             return
         else:
             # activate the actor if force is True
@@ -204,7 +214,7 @@ class Actor:
                 self.timeline.schedule(self)
             else:
                 # activate the actor if all waiting targets are completed
-                if all([x.completed for x in self.after]) is True:
+                if all([x.terminated for x in self.after]) is True:
                     self.status.remove("inactive")
                     if self.onhold:
                         self.status.remove("onhold")
@@ -279,6 +289,10 @@ class Actor:
     @property
     def completed(self):
         return "completed" in self.status
+
+    @property
+    def terminated(self):
+        return "terminated" in self.status
 
     @property
     def followers(self):
