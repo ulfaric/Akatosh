@@ -182,7 +182,7 @@ class Actor:
             # activate all followers    
             for actor in self.followers:
                 if actor.onhold:
-                    actor.activate()
+                    actor.activate(force=False)
 
             # remove all events associated with this actor
             for event in self.timeline.events[:]:
