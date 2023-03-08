@@ -91,7 +91,7 @@ class Resource:
             if isinstance(user, list):
                 for u in user:
                     for claim in self.claims[:]:
-                        if claim.user == u:
+                        if claim.user is u:
                             if amount is None:
                                 if claim.quantity > self.claimed_quantity:
                                     raise ValueError(
@@ -112,7 +112,7 @@ class Resource:
                                         self.claims.remove(claim)
             else:
                 for claim in self.claims[:]:
-                    if claim.user == user:
+                    if claim.user is user:
                         if amount is None:
                             if claim.quantity > self.claimed_quantity:
                                 raise ValueError(
