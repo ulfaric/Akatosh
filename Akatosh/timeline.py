@@ -27,11 +27,6 @@ class Timeline:
         self.events.append(event)
         self.events.sort(key=lambda event: event.priority)
         self.events.sort(key=lambda event: event.at)
-        # if actor.inactive:
-        #     actor.status.remove('inactive')
-        #     actor.status.append('active')
-        # if actor.onhold:
-        #     actor.status.remove('onhold')
         if actor.scheduled is False:
             actor.status.append('scheduled')
 
@@ -47,31 +42,9 @@ class Timeline:
                             next(next_event.actor.perform())
                         except StopIteration:
                             pass
-                            # for actor in next_event.actor.followers:
-                            #     if actor.onhold:
-                            #         for i, target in enumerate(actor.after):
-                            #             if target is next_event.actor:
-                            #                 actor._waits[i] = False
-                            #         if all(actor._waits) is False:
-                            #             actor.status.remove('onhold')
-                            #             actor.status.remove('inactive')
-                            #             actor.status.append('active')
-                            #             actor._time = self.now
-                            #             self.schedule(actor)
                     else:
                         try:
                             next_event.actor.perform()
-                            # for actor in next_event.actor.followers:
-                            #     if actor.onhold:
-                            #         for i, target in enumerate(actor.after):
-                            #             if target is next_event.actor:
-                            #                 actor._waits[i] = False
-                            #         if all(actor._waits) is False:
-                            #             actor.status.remove('onhold')
-                            #             actor.status.remove('inactive')
-                            #             actor.status.append('active')
-                            #             actor._time = self.now
-                            #             self.schedule(actor)
                         except Exception as e:
                             print(e)
                 else:

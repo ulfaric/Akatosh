@@ -70,15 +70,13 @@ class Resource:
     def distribute(self, user: Actor, quantity: Union[int, float]) -> bool:
         if quantity <= self.available_quantity:
             self._claimed_quantity += quantity
+            for claim in self.claims:
+                if claim.user is user:
+                    claim._quantity += quantity
+                    return True
             resource_claim = ResourceClaim(user, quantity)
-            if resource_claim not in self.claims:
-                self.claims.append(resource_claim)
-                return True
-            else:
-                for claim in self.claims:
-                    if claim.user is user:
-                        claim._quantity += quantity
-                        return True
+            self.claims.append(resource_claim)
+            return True
         else:
             raise ValueError(
                 f"Quantity {quantity} is greater than available quantity {self.available_quantity}."
