@@ -52,7 +52,7 @@ class Producer:
     _followers: List[Actor]
 
     _label: str
-    _product: Callable
+    _product: Union[Actor, object]
     _product_kargs: dict
     _production_rate: int
     _capacity: int
@@ -61,7 +61,7 @@ class Producer:
 
     def __init__(
         self,
-        product: Callable,
+        product: Union[Actor, object],
         product_kargs: dict,
         prodction_rate: int,
         step: Union[int, float],
@@ -194,18 +194,22 @@ class Producer:
                 f"Quantity {quantity} is greater than available capacity {self.capacity - len(self.inventory)}."
             )
 
-    def distribute(self, user: Actor, quantity: Optional[int] = None) -> None:
+    def distribute(self, user: Actor, quantity: Optional[int] = None) -> bool:
         if quantity is None:
-            consumer = Consumer(user)
-            if consumer not in self.consumers:
-                for _ in range(len(self.inventory)):
-                    consumer.products.append(self.inventory.pop())
-                self.consumers.append(consumer)
+            if len(self.inventory) != 0:
+                consumer = Consumer(user)
+                if consumer not in self.consumers:
+                    for _ in range(len(self.inventory)):
+                        consumer.products.append(self.inventory.pop())
+                    self.consumers.append(consumer)
+                else:
+                    for c in self.consumers:
+                        if c.user is user:
+                            for _ in range(len(self.inventory)):
+                                consumer.products.append(self.inventory.pop())
+                return True
             else:
-                for c in self.consumers:
-                    if c.user is user:
-                        for _ in range(len(self.inventory)):
-                            consumer.products.append(self.inventory.pop())
+                raise ValueError(f"Producer {self.id} has no stock.")
         else:
             if isinstance(quantity, int):
                 if quantity <= len(self.inventory):
@@ -219,6 +223,7 @@ class Producer:
                             if c.user is user:
                                 for _ in range(quantity):
                                     consumer.products.append(self.inventory.pop())
+                    return True
                 else:
                     raise ValueError(
                         f"Quantity {quantity} is greater than available quantity {len(self.inventory)}."
@@ -252,7 +257,7 @@ class Producer:
 
     @property
     def consumers(self) -> List[Consumer]:
-        return [consumer.user for consumer in self._consumers]
+        return self._consumers
 
     @property
     def id(self):
@@ -301,6 +306,10 @@ class Producer:
     @property
     def completed(self):
         return "completed" in self.status
+    
+    @property
+    def scheduled(self):
+        return "scheduled" in self.status
 
     @property
     def followers(self):

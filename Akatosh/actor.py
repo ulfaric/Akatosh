@@ -14,14 +14,14 @@ if TYPE_CHECKING:
 class Actor:
 
     _id: int
-    _action: Optional[Generator | Callable]
+    _action: Optional[Callable]
     _timeline: Timeline
     _priority: int
-    _at: Union[int, float]
-    _step: Union[int, float, Callable]
-    _till: Union[int, float]
+    _at: Union[int, float, Callable]
+    _step: Union[int, float, Callable, None]
+    _till: Union[int, float, Callable, None]
     _active: bool
-    _after: Optional[List[Actor]]
+    _after: List[Actor]
 
     _time: Union[int, float]
     _status: List[str]
@@ -29,7 +29,7 @@ class Actor:
 
     def __init__(
         self,
-        action: Optional[Generator | Callable] = None,
+        action: Optional[Callable] = None,
         timeline: Optional[Timeline] = None,
         priority: int = 0,
         at: Union[int, float, Callable] = 0,
@@ -140,7 +140,7 @@ class Actor:
                         self._time += round(self.step(), 3)
                     else:
                         self._time += round(self.step, 3)
-                    if self.time <= self.till:
+                    if self.time <= self.till: # type: ignore
                         yield self.timeline.schedule(self)
                     else:
                         break
@@ -162,7 +162,7 @@ class Actor:
                         self._time += round(self.step(), 3)
                     else:
                         self._time += round(self.step, 3)
-                    if self.time <= self.till:
+                    if self.time <= self.till: # type: ignore
                         yield self.timeline.schedule(self)
                     else:
                         break
@@ -223,16 +223,16 @@ class Actor:
                     self.timeline.schedule(self)
 
     def request(self, resource: Resource, amount: Union[int, float] = 1) -> bool:
-        resource.distribute(self, amount)
+        return resource.distribute(self, amount)
 
     def release(self, resource: Resource, amount: Optional[int | float] = None) -> bool:
         if amount is None:
-            resource.release(self)
+            return resource.release(self)
         else:
-            resource.release(self, amount)
+            return resource.release(self, amount)
 
-    def consume(self, producer: Producer, amount: Optional[int | float] = None) -> bool:
-        producer.distribute(self, amount)
+    def consume(self, producer: Producer, amount: Optional[int] = None) -> bool:
+        return producer.distribute(self, amount)
 
     @property
     def id(self):
@@ -243,8 +243,11 @@ class Actor:
         return self._priority
 
     @property
-    def action(self):
-        return self._action
+    def action(self) -> Callable:
+        if self._action is not None:
+            return self._action
+        else:
+            raise AttributeError(f"Actor {self.id} has no action defined.")
 
     @property
     def timeline(self):
