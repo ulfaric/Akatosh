@@ -44,6 +44,9 @@ class Actor:
         # generate a unique id for this actor
         self._id = uuid4().int
 
+        # assign the label to this actor
+        self._label = label or str()
+
         # assign the action to this actor
         self._action = action
 
@@ -78,25 +81,29 @@ class Actor:
                             message=f"Actor {self.label} has a lower priority than its waiting event {actor.label}."
                         )
             else:
-                raise TypeError(f"Actor {self.label} has a wrong type of waiting event.")
+                raise TypeError(
+                    f"Actor {self.label} has a wrong type of waiting event."
+                )
 
         # initialize the time
         if callable(at):
-            self._time = round(at(), 3)
+            self._time = round(at(), Mundus.accuracy)
         else:
-            self._time = round(at, 3)
+            self._time = round(at, Mundus.accuracy)
 
         if callable(step):
             self._step = step
-        elif step is None:
-            self._step = step
+        elif step is not None:
+            if step < ((1/pow(10, Mundus.accuracy))/2):
+                raise ValueError(f"Current accuracy is {Mundus.accuracy}, step size cannot be smaller than {(1/pow(10, Mundus.accuracy))/2}.")
+            self._step = round(step, Mundus.accuracy)
         else:
-            self._step = round(step, 3)
+            self._step = step
 
         if callable(till):
             self._till = till
         elif till is not None:
-            self._till = round(till, 3)
+            self._till = round(till, Mundus.accuracy)
         else:
             self._till = till
 
@@ -108,9 +115,6 @@ class Actor:
             self.status.append("inactive")
         if after is not None:
             self.status.append("onhold")
-
-        # assign the label to this actor
-        self._label = label or str()
 
         # schedule the actor onto timeline
         if self.onhold is False and self.active is True:
@@ -142,10 +146,10 @@ class Actor:
                             if actor.onhold:
                                 actor.activate(force=False)
                     if callable(self.step):
-                        self._time += round(self.step(), 3)
+                        self._time += round(self.step(), Mundus.accuracy)
                     else:
-                        self._time += round(self.step, 3)
-                    if self.time <= self.till: # type: ignore
+                        self._time += round(self.step, Mundus.accuracy)
+                    if self.time <= self.till:  # type: ignore
                         yield self.timeline.schedule(self)
                     else:
                         break
@@ -153,7 +157,7 @@ class Actor:
             # continuous actor with step size and end time
             elif self.step is not None and self.till is not None:
                 if callable(self.till):
-                    self._till = round(self.till(), 3)
+                    self._till = round(self.till(), Mundus.accuracy)
                 while True:
                     self.action()
                     # if this is the last step, activate all followers
@@ -164,15 +168,13 @@ class Actor:
                             if actor.onhold:
                                 actor.activate(force=False)
                     if callable(self.step):
-                        self._time += round(self.step(), 3)
+                        self._time += round(self.step(), Mundus.accuracy)
                     else:
-                        self._time += round(self.step, 3)
-                    if self.time <= self.till: # type: ignore
+                        self._time += round(self.step, Mundus.accuracy)
+                    if self.time <= self.till:  # type: ignore
                         yield self.timeline.schedule(self)
                     else:
                         break
-
-            
 
     def deactivate(self, terminate: bool = True):
         # if the actor is already inactive, do nothing
@@ -190,8 +192,8 @@ class Actor:
                     self.status.append("terminated")
                 else:
                     self.status.append("onhold")
-            
-            # activate all followers    
+
+            # activate all followers
             for actor in self.followers:
                 if actor.onhold:
                     actor.activate(force=False)
@@ -204,7 +206,9 @@ class Actor:
     def activate(self, force: bool = True):
         # if the actor is already active, do nothing
         if self.terminated:
-            warnings.warn(message=f"Actor {self.label} is terminated and cannot be activated.")
+            warnings.warn(
+                message=f"Actor {self.label} is terminated and cannot be activated."
+            )
             return
         elif self.active:
             return
@@ -215,7 +219,7 @@ class Actor:
                 if self.onhold:
                     self.status.remove("onhold")
                 self.status.append("active")
-                self._time = self.timeline.now
+                self._time = round(self.timeline.now, Mundus.accuracy)
                 self.timeline.schedule(self)
             else:
                 # activate the actor if all waiting targets are completed
@@ -224,7 +228,7 @@ class Actor:
                     if self.onhold:
                         self.status.remove("onhold")
                     self.status.append("active")
-                    self._time = self.timeline.now
+                    self._time = round(self.timeline.now, Mundus.accuracy)
                     self.timeline.schedule(self)
 
     def request(self, resource: Resource, amount: Union[int, float] = 1) -> bool:
@@ -236,13 +240,13 @@ class Actor:
         else:
             return resource.release(self, amount)
 
-    def consume(self, producer: Producer, amount: int = 1) -> bool:
+    def consume(self, producer: Producer, amount: int = 1):
         return producer.distribute(self, amount)
 
     @property
     def id(self):
         return self._id
-    
+
     @property
     def label(self):
         return self._label
@@ -264,7 +268,7 @@ class Actor:
 
     @property
     def time(self):
-        return self._time
+        return round(self._time, Mundus.accuracy)
 
     @property
     def till(self):

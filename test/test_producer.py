@@ -1,3 +1,4 @@
+from typing import List
 from Akatosh import Actor, Producer, Mundus
 
 
@@ -34,8 +35,9 @@ class Buyer(Actor):
 
     def action(self):
         if len(milkfarm.inventory)>=1:
-            milkfarm.distribute(self, 1)
-            print(f"Buyer {self.id} bought one milk")
+            milk:List[Milk] = milkfarm.distribute(self, 1)
+            milk[0].deactivate()
+            print(f"Buyer {self.id} bought one milk {milk[0].id}")
 
 
 milkfarm = Producer(product=Milk, production_period=1, production_rate=3, priority=0, capacity=10)

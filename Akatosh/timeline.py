@@ -23,7 +23,7 @@ class Timeline:
         self._events = list()
 
     def schedule(self, actor: Actor):
-        event = Event(at=round(actor.time,3), priority=actor.priority, actor=actor)
+        event = Event(at=actor.time, priority=actor.priority, actor=actor)
         self.events.append(event)
         self.events.sort(key=lambda event: event.priority)
         self.events.sort(key=lambda event: event.at)

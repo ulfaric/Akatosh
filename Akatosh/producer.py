@@ -115,7 +115,7 @@ class Producer:
 
         return products
 
-    def distribute(self, user: Union[Actor, object], quantity: int) -> bool:
+    def distribute(self, user: Union[Actor, object], quantity: int):
         """Distribute products to a user."""
         if quantity > len(self.inventory):
             raise ValueError(
@@ -124,15 +124,21 @@ class Producer:
 
         for claim in self.claims:
             if claim.user is user:
+                claimed_products = list()
                 for _ in range(quantity):
-                    claim.products.append(self.inventory.pop())
-                return True
+                    product = self.inventory.pop()
+                    claim.products.append(product)
+                    claimed_products.append(product)
+                return claimed_products
 
         claim = ProductClaim(user)
+        claimed_products = list()
         for _ in range(quantity):
-            claim.products.append(self.inventory.pop())
+            product = self.inventory.pop()
+            claim.products.append(product)
+            claimed_products.append(product)
         self.claims.append(claim)
-        return True
+        return claimed_products
 
     @property
     def id(self) -> int:
