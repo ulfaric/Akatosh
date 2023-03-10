@@ -236,7 +236,7 @@ class Actor:
         else:
             return resource.release(self, amount)
 
-    def consume(self, producer: Producer, amount: Optional[int] = None) -> bool:
+    def consume(self, producer: Producer, amount: int = 1) -> bool:
         return producer.distribute(self, amount)
 
     @property

@@ -1,29 +1,29 @@
 from __future__ import annotations
-from copy import deepcopy
-from typing import Generator, List, Optional, Union, Callable, TYPE_CHECKING
+from cmath import atan
+from typing import List, Optional, Type, Union, Callable
 from uuid import uuid4
-import warnings
-from math import inf
 
-from Akatosh import Timeline, Mundus, Actor
+from more_itertools import distribute
+
+from .actor import Actor
 
 
-class Consumer:
-    _user: Union[Actor,object]
+class ProductClaim:
+    _user: Union[Actor, object]
     _products: List
 
-    def __init__(self, user: Actor) -> None:
+    def __init__(self, user: Union[Actor, object]) -> None:
         self._user = user
         self._products = list()
 
-    def __eq__(self, __o: Consumer) -> bool:
+    def __eq__(self, __o: ProductClaim) -> bool:
         if self.user is __o.user:
             return True
         else:
             return False
 
     @property
-    def user(self) -> Union[Actor,object]:
+    def user(self) -> Union[Actor, object]:
         return self._user
 
     @property
@@ -38,205 +38,80 @@ class Consumer:
 class Producer:
 
     _id: int
-    _action: Optional[Generator | Callable]
-    _timeline: Timeline
-    _priority: int
-    _at: Union[int, float]
-    _step: Union[int, float, Callable]
-    _till: Union[int, float]
-    _active: bool
-    _after: Actor
-
-    _time: Union[int, float]
-    _status: List[str]
-    _followers: List[Actor]
-
-    _label: str
-    _product: Union[Actor, object]
+    _label: Optional[str]
+    _product: Type
     _product_kargs: dict
-    _production_rate: int
-    _capacity: int
     _inventory: List
-    _consumers: List[Consumer]
+    _capacity: Optional[int]
+    _claims: List[ProductClaim]
+    _production_period: Union[int, float]
+    _production_rate: int
+    _at: Union[int, float, Callable]
+    _till: Optional[Union[int, float, Callable]]
+    _priority: int
 
     def __init__(
         self,
-        product: Union[Actor, object],
-        product_kargs: dict,
-        prodction_rate: int,
-        step: Union[int, float],
-        timeline: Optional[Timeline] = None,
-        priority: int = 0,
-        at: Union[int, float, Callable] = 0,
-        till: Optional[int | float | Callable] = None,
-        active: bool = True,
-        after: Optional[Actor] = None,
+        product: Type,
+        production_period: Union[int, float],
+        production_rate: int,
+        priority: int = 1,
+        capacity: Optional[int] = None,
         label: Optional[str] = None,
-        capacity: int = 1,
+        at: Union[int, float, Callable] = 0,
+        till: Optional[Union[int, float, Callable]] = None,
+        **product_kargs,
     ) -> None:
-
-        # generate a unique id for this producer
         self._id = uuid4().int
-
-        # assign the timeline to this producer
-        if timeline is None:
-            self._timeline = Mundus.timeline
-        else:
-            self._timeline = timeline
-        self.timeline.actors.append(self)
-
-        # assign the priority to this producer
-        self._priority = priority
-
-        # initialize the follower list
-        self._followers = list()
-
-        # assign the waiting target to this producer
-        if after is not None:
-            self._after = after
-            after.followers.append(self)
-            if after.priority > self.priority:
-                warnings.warn(
-                    message=f"Producer {self.id} has a lower priority than its waiting target {after.id}."
-                )
-
-        # initialize the time
-        self._time = at
-        self._till = till
-
-        # initialize the status
-        self._status = list()
-        if active:
-            self.status.append("active")
-        else:
-            self.status.append("inactive")
-        if after is not None:
-            self.status.append("onhold")
-
-        # schedule the actor onto timeline
-        if self.onhold is False:
-            self.timeline.schedule(self)
-
         self._label = label or str()
         self._product = product
         self._product_kargs = product_kargs
-        self._production_rate = prodction_rate
-        self._step = step
-        self._capacity = capacity
         self._inventory = list()
-        self._consumers = list()
+        self._production_period = production_period
+        self._production_rate = round(production_rate)
+        self._capacity = capacity
+        self._at= at
+        self._till = till
+        self._claims = list()
 
-        if hasattr(self.product, "_priority"):
-            if self.product.priority < self.priority:
-                warnings.warn(
-                    message=f"Producer {self} has lower priority than its producer's priority {self.priority}."
-                )
+        Actor(at=self.at, step = self.production_period, till=self.till, action=self.produce, priority=priority)
 
-    def perform(self):
-        # non-continuous actor
-        if self.step is None and self.till is None:
-            if self.active:
-                self.action()
-        # continuous actor but misses step size
-        elif self.step is None and self.till is not None:
-            raise AttributeError(f"Actor {self.id} has no step size defined.")
-        # continuous actor with step size but no end time
-        elif self.step is not None and self.till is None:
-            self._till = inf
-            while self.time < self.till:
-                if self.active:
-                    self.action()
-                if callable(self.step):
-                    self._time += self.step()
-                else:
-                    self._time += self.step
-                yield self.timeline.schedule(self)
-            if self.active:
-                self.action()
-        # continuous actor with step size and end time
-        elif self.step is not None and self.till is not None:
-            if callable(self.till):
-                self._till = self.till()
-            while self.time < self.till:
-                if self.active:
-                    self.action()
-                if callable(self.step):
-                    self._time += self.step()
-                else:
-                    self._time += self.step
-                yield self.timeline.schedule(self)
-            if self.active:
-                self.action()
-
-    def action(self):
+    def produce(self):
         for _ in range(self.production_rate):
-            self.inventory.append(self.product(**self.product_kargs))
+            if self.capacity is None:
+                self.inventory.append(self.product(**self.product_kargs))
+            else:
+                if len(self.inventory) < self.capacity:
+                    self.inventory.append(self.product(**self.product_kargs))
 
-    def deactivate(self):
-        if "active" in self.status:
-            self.status.remove("active")
-        if "inactive" not in self.status:
-            self.status.append("inactive")
-
-    def get(self, quantity: int = 1) -> List:
-        if quantity <= len(self.inventory):
-            return [self.inventory.pop() for _ in range(quantity)]
-        else:
+    def distribute(self, user: Union[Actor, object], quantity: int) -> bool:
+        if quantity > len(self.inventory):
             raise ValueError(
-                f"Quantity {quantity} is greater than available quantity {len(self.inventory)}."
+                f"Producer {self.label} does not have enough products in inventory."
             )
 
-    def restock(self, quantity: int = 1) -> None:
-        if len(self.inventory) + quantity <= self.capacity:
-            self.inventory.extend([self.product for _ in range(quantity)])
-        else:
-            raise ValueError(
-                f"Quantity {quantity} is greater than available capacity {self.capacity - len(self.inventory)}."
-            )
-
-    def distribute(self, user: Actor, quantity: Optional[int] = None) -> bool:
-        if quantity is None:
-            if len(self.inventory) != 0:
-                consumer = Consumer(user)
-                if consumer not in self.consumers:
-                    for _ in range(len(self.inventory)):
-                        consumer.products.append(self.inventory.pop())
-                    self.consumers.append(consumer)
-                else:
-                    for c in self.consumers:
-                        if c.user is user:
-                            for _ in range(len(self.inventory)):
-                                consumer.products.append(self.inventory.pop())
+        for claim in self.claims:
+            if claim.user is user:
+                for _ in range(quantity):
+                    claim.products.append(self.inventory.pop())
                 return True
-            else:
-                raise ValueError(f"Producer {self.id} has no stock.")
-        else:
-            if isinstance(quantity, int):
-                if quantity <= len(self.inventory):
-                    consumer = Consumer(user)
-                    if consumer not in self.consumers:
-                        for _ in range(quantity):
-                            consumer.products.append(self.inventory.pop())
-                        self.consumers.append(consumer)
-                    else:
-                        for c in self.consumers:
-                            if c.user is user:
-                                for _ in range(quantity):
-                                    consumer.products.append(self.inventory.pop())
-                    return True
-                else:
-                    raise ValueError(
-                        f"Quantity {quantity} is greater than available quantity {len(self.inventory)}."
-                    )
-            else:
-                raise TypeError(f"Quantity {quantity} is not an integer.")
+
+        claim = ProductClaim(user)
+        for _ in range(quantity):
+            claim.products.append(self.inventory.pop())
+        self.claims.append(claim)
+        return True
 
     @property
-    def label(self) -> str:
+    def id(self) -> int:
+        return self._id
+
+    @property
+    def label(self) -> Optional[str]:
         return self._label
 
     @property
-    def product(self) -> object:
+    def product(self) -> Type:
         return self._product
 
     @property
@@ -244,73 +119,33 @@ class Producer:
         return self._product_kargs
 
     @property
-    def production_rate(self) -> int:
-        return self._production_rate
-
-    @property
-    def capacity(self) -> int:
-        return self._capacity
-
-    @property
     def inventory(self) -> List:
         return self._inventory
 
     @property
-    def consumers(self) -> List[Consumer]:
-        return self._consumers
+    def capacity(self) -> Optional[int]:
+        return self._capacity
 
     @property
-    def id(self):
-        return self._id
+    def claims(self) -> List[ProductClaim]:
+        return self._claims
 
     @property
-    def priority(self):
-        return self._priority
+    def production_period(self) -> Union[int, float]:
+        return self._production_period
 
     @property
-    def timeline(self):
-        return self._timeline
+    def production_rate(self) -> int:
+        return self._production_rate
 
     @property
-    def time(self):
-        return self._time
+    def at(self) -> Union[int, float, Callable]:
+        return self._at
 
     @property
-    def till(self):
+    def till(self) -> Union[int, float, Callable,None]:
         return self._till
 
     @property
-    def step(self):
-        return self._step
-
-    @property
-    def status(self):
-        return self._status
-
-    @property
-    def after(self):
-        return self._after
-
-    @property
-    def active(self):
-        return "active" in self.status
-
-    @property
-    def inactive(self):
-        return "inactive" in self.status
-
-    @property
-    def onhold(self):
-        return "onhold" in self.status
-
-    @property
-    def completed(self):
-        return "completed" in self.status
-    
-    @property
-    def scheduled(self):
-        return "scheduled" in self.status
-
-    @property
-    def followers(self):
-        return self._followers
+    def num_available_products(self) -> int:
+        return len(self.inventory)
