@@ -9,6 +9,8 @@ from .actor import Actor
 
 
 class ProductClaim:
+    """Record of products claimed by a user."""
+
     _user: Union[Actor, object]
     _products: List
 
@@ -36,6 +38,7 @@ class ProductClaim:
 
 
 class Producer:
+    """A producer that produces products at a given rate and period."""
 
     _id: int
     _label: Optional[str]
@@ -62,6 +65,18 @@ class Producer:
         till: Optional[Union[int, float, Callable]] = None,
         **product_kargs,
     ) -> None:
+        """Create a producer which produces products at a given rate and period.
+
+        Args:
+            product (Type): the product to be produced.
+            production_period (Union[int, float]): the cycle period of production.
+            production_rate (int): the amount of products to be produced in each cycle.
+            priority (int, optional): the production event priority. Defaults to 1.
+            capacity (Optional[int], optional): the inventory's capacity. If none, then the capacity is infinite. Defaults to None.
+            label (Optional[str], optional): Label of the producer. Defaults to None.
+            at (Union[int, float, Callable], optional): when the production starts. Defaults to 0.
+            till (Optional[Union[int, float, Callable]], optional): when the production ends. If none, the production never ends. Defaults to None.
+        """
         self._id = uuid4().int
         self._label = label or str()
         self._product = product
@@ -70,11 +85,17 @@ class Producer:
         self._production_period = production_period
         self._production_rate = round(production_rate)
         self._capacity = capacity
-        self._at= at
+        self._at = at
         self._till = till
         self._claims = list()
 
-        Actor(at=self.at, step = self.production_period, till=self.till, action=self.produce, priority=priority)
+        Actor(
+            at=self.at,
+            step=self.production_period,
+            till=self.till,
+            action=self.produce,
+            priority=priority,
+        )
 
     def produce(self):
         for _ in range(self.production_rate):
@@ -84,7 +105,21 @@ class Producer:
                 if len(self.inventory) < self.capacity:
                     self.inventory.append(self.product(**self.product_kargs))
 
+    def get(self, quantity: int) -> List:
+        """Get products from the inventory."""
+        if quantity > len(self.inventory):
+            raise ValueError(
+                f"Producer {self.label} does not have enough products in inventory."
+            )
+
+        products = list()
+        for _ in range(quantity):
+            products.append(self.inventory.pop())
+
+        return products
+
     def distribute(self, user: Union[Actor, object], quantity: int) -> bool:
+        """Distribute products to a user."""
         if quantity > len(self.inventory):
             raise ValueError(
                 f"Producer {self.label} does not have enough products in inventory."
@@ -143,7 +178,7 @@ class Producer:
         return self._at
 
     @property
-    def till(self) -> Union[int, float, Callable,None]:
+    def till(self) -> Union[int, float, Callable, None]:
         return self._till
 
     @property
