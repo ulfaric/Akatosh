@@ -67,7 +67,7 @@ class Actor:
                 after.followers.append(self)
                 if after.priority > self.priority:
                     warnings.warn(
-                        message=f"Actor {self.id} has a lower priority than its waiting target {after.id}."
+                        message=f"Actor {self.label} has a lower priority than its waiting event {after.label}."
                     )
             elif isinstance(after, list):
                 self._after = after
@@ -75,10 +75,10 @@ class Actor:
                     actor.followers.append(self)
                     if actor.priority > self.priority:
                         warnings.warn(
-                            message=f"Actor {self.id} has a lower priority than its waiting target {actor.id}."
+                            message=f"Actor {self.label} has a lower priority than its waiting event {actor.label}."
                         )
             else:
-                raise TypeError(f"Actor {self.id} has a wrong type of waiting target.")
+                raise TypeError(f"Actor {self.label} has a wrong type of waiting event.")
 
         # initialize the time
         if callable(at):
@@ -128,7 +128,7 @@ class Actor:
                         actor.activate(force=False)
             # continuous actor but misses step size
             elif self.step is None and self.till is not None:
-                raise AttributeError(f"Actor {self.id} has no step size defined.")
+                raise AttributeError(f"Actor {self.label} has no step size defined.")
             # continuous actor with step size but no end time
             elif self.step is not None and self.till is None:
                 self._till = inf
@@ -204,7 +204,7 @@ class Actor:
     def activate(self, force: bool = True):
         # if the actor is already active, do nothing
         if self.terminated:
-            warnings.warn(message=f"Actor {self.id} is terminated and cannot be activated.")
+            warnings.warn(message=f"Actor {self.label} is terminated and cannot be activated.")
             return
         elif self.active:
             return
@@ -242,6 +242,10 @@ class Actor:
     @property
     def id(self):
         return self._id
+    
+    @property
+    def label(self):
+        return self._label
 
     @property
     def priority(self):
@@ -252,7 +256,7 @@ class Actor:
         if self._action is not None:
             return self._action
         else:
-            raise AttributeError(f"Actor {self.id} has no action defined.")
+            raise AttributeError(f"Actor {self.label} has no action defined.")
 
     @property
     def timeline(self):

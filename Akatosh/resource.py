@@ -65,7 +65,7 @@ class Resource:
             return True
         else:
             raise ValueError(
-                f"Quantity {quantity} is greater than available quantity {self.available_quantity}."
+                f"Quantity {quantity} is greater than available quantity {self.available_quantity} of resource {self.label}."
             )
 
     def put(self, quantity: Union[int, float]) -> bool:
@@ -75,7 +75,7 @@ class Resource:
             return True
         else:
             raise ValueError(
-                f"Quantity {quantity} is greater than claimed quantity {self.claimed_quantity}."
+                f"Quantity {quantity} is greater than claimed quantity {self.claimed_quantity} of resource {self.label}."
             )
 
     def distribute(
@@ -104,7 +104,7 @@ class Resource:
             return True
         else:
             raise ValueError(
-                f"Quantity {quantity} is greater than available quantity {self.available_quantity}."
+                f"Quantity {quantity} is greater than available quantity {self.available_quantity} of resource {self.label}."
             )
 
     def release(
@@ -135,7 +135,7 @@ class Resource:
                             if amount is None:
                                 if claim.quantity > self.claimed_quantity:
                                     raise ValueError(
-                                        f"Resource claim's quantity {claim.quantity} is greater than resource's claimed quantity {self.claimed_quantity}."
+                                        f"Resource claim's quantity {claim.quantity} is greater than claimed quantity {self.claimed_quantity} of resource {self.label}."
                                     )
                                 else:
                                     self._claimed_quantity -= claim.quantity
@@ -143,7 +143,7 @@ class Resource:
                             else:
                                 if amount > claim.quantity:
                                     raise ValueError(
-                                        f"User tries to release {amount} units, but only {claim.quantity} units are claimed by the user."
+                                        f"User tries to release {amount} units, but only {claim.quantity} units are claimed by the user from resource {self.label}."
                                     )
                                 else:
                                     self._claimed_quantity -= amount
@@ -156,7 +156,7 @@ class Resource:
                         if amount is None:
                             if claim.quantity > self.claimed_quantity:
                                 raise ValueError(
-                                    f"Resource claim's quantity {claim.quantity} is greater than resource's claimed quantity {self.claimed_quantity}."
+                                    f"Resource claim's quantity {claim.quantity} is greater than claimed quantity {self.claimed_quantity} of resource {self.label}."
                                 )
                             else:
                                 self._claimed_quantity -= claim.quantity
@@ -164,7 +164,7 @@ class Resource:
                         else:
                             if amount > claim.quantity:
                                 raise ValueError(
-                                    f"User tries to release {amount} units, but only {claim.quantity} units are claimed by the user."
+                                    f"User tries to release {amount} units, but only {claim.quantity} units are claimed by the user from resource {self.label}."
                                 )
                             else:
                                 self._claimed_quantity -= amount
