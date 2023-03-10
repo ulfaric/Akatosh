@@ -22,10 +22,11 @@ class Actor:
     _till: Union[int, float, Callable, None]
     _active: bool
     _after: List[Actor]
+    _followers: List[Actor]
+    _label: Optional[str]
 
     _time: Union[int, float]
     _status: List[str]
-    _followers: List[Actor]
 
     def __init__(
         self,
@@ -37,6 +38,7 @@ class Actor:
         till: Optional[int | float | Callable] = None,
         active: bool = True,
         after: Optional[Actor | List[Actor]] = None,
+        label: Optional[str] = None,
     ) -> None:
 
         # generate a unique id for this actor
@@ -106,6 +108,9 @@ class Actor:
             self.status.append("inactive")
         if after is not None:
             self.status.append("onhold")
+
+        # assign the label to this actor
+        self._label = label or str()
 
         # schedule the actor onto timeline
         if self.onhold is False and self.active is True:

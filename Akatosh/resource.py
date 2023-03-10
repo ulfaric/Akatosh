@@ -9,7 +9,9 @@ if TYPE_CHECKING:
 
 @dataclass
 class ResourceClaim:
-    _user: Actor
+    """Resource claim record of a user. Each user only have one resource claim for a resource."""
+
+    _user: Union[Actor, object]
     _quantity: Union[int, float]
 
     def __eq__(self, __o: ResourceClaim) -> bool:
@@ -19,7 +21,7 @@ class ResourceClaim:
             return False
 
     @property
-    def user(self) -> Actor:
+    def user(self) -> Union[Actor, object]:
         return self._user
 
     @property
@@ -42,6 +44,13 @@ class Resource:
         capacity: Union[int, float] = 1,
         init_claimed_quantity: Union[int, float] = 0,
     ) -> None:
+        """Create a resource object. The resource can be claimed by users, or distribute to users. The resource can be released from users. The resource can be put back or get from the resource pool anonymously.
+
+        Args:
+            label (Optional[str], optional): the label of the resources. Defaults to None.
+            capacity (Union[int, float], optional): _description_. the capacity of the resource to 1.
+            init_claimed_quantity (Union[int, float], optional): the initial amount of resource in use. Defaults to 0.
+        """
         self._id = uuid4().int
         self._label = label or str()
         self._capacity = capacity
@@ -50,6 +59,7 @@ class Resource:
         self._claims = list()
 
     def get(self, quantity: Union[int, float]) -> bool:
+        """Anonymous user get resource from resource pool. No resource claim is created."""
         if quantity <= self.available_quantity:
             self._claimed_quantity += quantity
             return True
@@ -59,6 +69,7 @@ class Resource:
             )
 
     def put(self, quantity: Union[int, float]) -> bool:
+        """Anonymous user put resource back to resource pool. No resource claim is checked."""
         if quantity <= self.claimed_quantity:
             self._claimed_quantity -= quantity
             return True
@@ -67,7 +78,21 @@ class Resource:
                 f"Quantity {quantity} is greater than claimed quantity {self.claimed_quantity}."
             )
 
-    def distribute(self, user: Actor, quantity: Union[int, float]) -> bool:
+    def distribute(
+        self, user: Union[Actor, object], quantity: Union[int, float]
+    ) -> bool:
+        """Distribute a amount of resource to a user. If the user already has a claim, the quantity will be added to the claim. Otherwise, a new claim will be created.
+
+        Args:
+            user (Union[Actor, object]): the user to distribute resource to.
+            quantity (Union[int, float]): the amount of resource to distribute.
+
+        Raises:
+            ValueError: if the quantity is greater than available quantity.
+
+        Returns:
+            bool: return True if the distribution is successful.
+        """
         if quantity <= self.available_quantity:
             self._claimed_quantity += quantity
             for claim in self.claims:
@@ -82,7 +107,22 @@ class Resource:
                 f"Quantity {quantity} is greater than available quantity {self.available_quantity}."
             )
 
-    def release(self, user: Optional[Actor | List[Actor]] = None, amount:Optional[int | float]=None) -> bool:
+    def release(
+        self,
+        user: Optional[Actor | List[Actor] | object | List[object]] = None,
+        amount: Optional[int | float] = None,
+    ) -> bool:
+        """Release resource from a user or group of users. If the user is no longer using any resource, the resource claim will be removed. if no user is specified, all resource claims will be removed.
+        Args:
+            user (Optional[Actor  |  List[Actor]  |  object  |  List[object]], optional): the user or group of users. Defaults to None.
+            amount (Optional[int  |  float], optional): the amount of resource to release. Defaults to None.
+
+        Raises:
+            ValueError: raised if the amount is greater than the user claimed quantity.
+
+        Returns:
+            bool: return True if the release is successful.
+        """
         if user is None:
             self._claimed_quantity = 0
             self._claims.clear()
@@ -131,6 +171,7 @@ class Resource:
                                 claim._quantity -= amount
                                 if claim.quantity == 0:
                                     self.claims.remove(claim)
+            return True
 
     @property
     def id(self) -> int:
@@ -161,5 +202,5 @@ class Resource:
         return [claim.user for claim in self.claims]
 
     @property
-    def  utilization(self) -> Union[int, float]:
+    def utilization(self) -> Union[int, float]:
         return self.claimed_quantity / self.capacity

@@ -9,7 +9,7 @@ from Akatosh import Timeline, Mundus, Actor
 
 
 class Consumer:
-    _user: Actor
+    _user: Union[Actor,object]
     _products: List
 
     def __init__(self, user: Actor) -> None:
@@ -23,11 +23,11 @@ class Consumer:
             return False
 
     @property
-    def user(self) -> Actor:
+    def user(self) -> Union[Actor,object]:
         return self._user
 
     @property
-    def quantity(self) -> Union[int, float]:
+    def quantity(self) -> int:
         return len(self._products)
 
     @property
