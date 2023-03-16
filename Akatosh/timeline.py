@@ -37,16 +37,10 @@ class Timeline:
                 if self.now < next_event.at:
                     self._time = next_event.at
                 if next_event.at <= till:
-                    if inspect.isgeneratorfunction(next_event.actor.perform):
-                        try:
-                            next(next_event.actor.perform())
-                        except StopIteration:
-                            pass
-                    else:
-                        try:
-                            next_event.actor.perform()
-                        except Exception as e:
-                            print(e)
+                    try:
+                        next(next_event.actor.perform())
+                    except StopIteration:
+                        pass
                 else:
                     break
             else:
