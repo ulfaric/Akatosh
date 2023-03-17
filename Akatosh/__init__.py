@@ -1,7 +1,5 @@
-from .event import *
 from .universe import Mundus
-from .timeline import *
-from .actor import *
+from .actor import Actor
 from .resource import Resource
 from .producer import Producer
 

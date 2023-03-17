@@ -4,11 +4,12 @@ from uuid import uuid4
 from math import inf
 import warnings
 
-from Akatosh import Timeline, Mundus
+from Akatosh import Mundus
 
 if TYPE_CHECKING:
-    from Akatosh import Resource
-    from Akatosh import Producer
+    from .resource import Resource
+    from .producer import Producer
+    from .timeline import Timeline
 
 
 class Actor:

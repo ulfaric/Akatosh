@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from uuid import uuid4
 
 if TYPE_CHECKING:
-    from Akatosh import Actor
+    from .actor import Actor
 
 
 @dataclass

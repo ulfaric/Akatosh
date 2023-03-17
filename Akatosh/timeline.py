@@ -4,10 +4,10 @@ from typing import TYPE_CHECKING, List, Union
 from uuid import uuid4
 import inspect
 
-from Akatosh import Event
+from .event import Event
 
 if TYPE_CHECKING:
-    from Akatosh import Actor
+    from .actor import Actor
 
 
 class Timeline:

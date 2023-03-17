@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Union
 
 if TYPE_CHECKING:
-    from Akatosh import Actor
+    from .actor import Actor
 
 
 class Event:
