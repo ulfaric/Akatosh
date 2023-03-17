@@ -22,3 +22,17 @@ class TestActor(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+Actor(action = lambda: print("All hail dragonborn!"))
+
+def hail(message: str):
+    print(message)
+
+
+class Myevent(Actor):
+
+    def action(self):
+        print("All hail dragonborn!")
+
+Myevent()
