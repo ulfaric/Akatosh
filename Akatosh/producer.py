@@ -44,7 +44,7 @@ class Producer:
     _inventory: List
     _capacity: Optional[int]
     _claims: List[ProductClaim]
-    _production_period: Union[int, float]
+    _production_period: Union[int, float, Callable]
     _production_rate: int
     _at: Union[int, float, Callable]
     _till: Optional[Union[int, float, Callable]]
@@ -53,7 +53,7 @@ class Producer:
     def __init__(
         self,
         product: Type,
-        production_period: Union[int, float],
+        production_period: Union[int, float, Callable],
         production_rate: int,
         priority: int = 1,
         capacity: Optional[int] = None,
@@ -142,48 +142,60 @@ class Producer:
 
     @property
     def id(self) -> int:
+        """Get the producer's id."""
         return self._id
 
     @property
     def label(self) -> Optional[str]:
+        """Get the producer's label."""
         return self._label
 
     @property
     def product(self) -> Type:
+        """Get the product produced by the producer."""
         return self._product
 
     @property
     def product_kargs(self) -> dict:
+        """Get the product's kargs."""
         return self._product_kargs
 
     @property
     def inventory(self) -> List:
+        """Get the producer's inventory."""
         return self._inventory
 
     @property
     def capacity(self) -> Optional[int]:
+        """Get the producer's inventory capacity."""
         return self._capacity
 
     @property
     def claims(self) -> List[ProductClaim]:
+        """Get the producer's claims."""
         return self._claims
 
     @property
-    def production_period(self) -> Union[int, float]:
+    def production_period(self) -> Union[int, float, Callable]:
+        """Get the producer's production period, aka how often the producer produces products. Could be a function."""
         return self._production_period
 
     @property
     def production_rate(self) -> int:
+        """Get the producer's production rate, aka how many products the producer produces in each cycle."""
         return self._production_rate
 
     @property
     def at(self) -> Union[int, float, Callable]:
+        """Get the producer's start time."""
         return self._at
 
     @property
     def till(self) -> Union[int, float, Callable, None]:
+        """Get the producer's end time."""
         return self._till
 
     @property
     def num_available_products(self) -> int:
+        """Get the number of available products in the inventory."""
         return len(self.inventory)

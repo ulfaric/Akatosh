@@ -12,22 +12,6 @@ if TYPE_CHECKING:
 
 
 class Actor:
-
-    _id: int
-    _action: Optional[Callable]
-    _timeline: Timeline
-    _priority: int
-    _at: Union[int, float, Callable]
-    _step: Union[int, float, Callable, None]
-    _till: Union[int, float, Callable, None]
-    _active: bool
-    _after: List[Actor]
-    _followers: List[Actor]
-    _label: Optional[str]
-
-    _time: Union[int, float]
-    _status: List[str]
-
     def __init__(
         self,
         action: Optional[Callable] = None,
@@ -39,7 +23,21 @@ class Actor:
         active: bool = True,
         after: Optional[Actor | List[Actor]] = None,
         label: Optional[str] = None,
+        **kwargs,
     ) -> None:
+        """Create an actor, aka event. if step and till are both None, the actor is non-continuous and one time only. If a till is defined, then step can not be non. The arguments "at", "step" and "till" accepts int, float or callable. If callable, the function must return a int or float. If the callable returns a float, the float will be rounded to the current accuracy of Mundus.
+
+        Args:
+            action (Optional[Callable], optional): the function that will happens. Defaults to None only if this is not a subclass of Actor.
+            timeline (Optional[Timeline], optional): which timeline this actor/event will happen. Defaults to None (not full implemented, leave it as None).
+            priority (int, optional): the priority of this actor/event. Defaults to 0.
+            at (Union[int, float, Callable], optional): when the event starts. Defaults to 0.
+            step (Optional[int  |  float  |  Callable], optional): next time the event starts. Defaults to None.
+            till (Optional[int  |  float  |  Callable], optional): when the event stops. Defaults to None.
+            active (bool, optional): whether the event should be active directly. Defaults to True. If false, the actor must call activate() to activate the actor.
+            after (Optional[Actor  |  List[Actor]], optional): whether the event should happens only if other event(s) happened. Defaults to None.
+            label (Optional[str], optional): a short description for this event. Defaults to None.
+        """
 
         # generate a unique id for this actor
         self._id = uuid4().int
@@ -59,6 +57,9 @@ class Actor:
 
         # assign the priority to this actor
         self._priority = priority
+
+        # pass the action parameters
+        self._kwargs = kwargs
 
         # initialize the follower list
         self._followers = list()
@@ -94,8 +95,10 @@ class Actor:
         if callable(step):
             self._step = step
         elif step is not None:
-            if step < ((1/pow(10, Mundus.accuracy))/2):
-                raise ValueError(f"Current accuracy is {Mundus.accuracy}, step size cannot be smaller than {(1/pow(10, Mundus.accuracy))/2}.")
+            if step < ((1 / pow(10, Mundus.accuracy)) / 2):
+                raise ValueError(
+                    f"Current accuracy is {Mundus.accuracy}, step size cannot be smaller than {(1/pow(10, Mundus.accuracy))/2}."
+                )
             self._step = round(step, Mundus.accuracy)
         else:
             self._step = step
@@ -121,10 +124,11 @@ class Actor:
             self.timeline.schedule(self)
 
     def perform(self):
+        """Perform the action of this actor. If the actor is continuous, it will return a generator. If the actor is non-continuous, it will return None. Should not be called manually."""
         # non-continuous actor
         if self.active and self.onhold is False:
             if self.step is None and self.till is None:
-                self.action()
+                self.action(**self.kwargs)
                 self.status.append("completed")
                 self.status.append("terminated")
                 for actor in self.followers:
@@ -136,7 +140,7 @@ class Actor:
             # continuous actor with step size but no end time
             elif self.step is not None and self.till is None:
                 while True:
-                    self.action()
+                    self.action(**self.kwargs)
                     if callable(self.step):
                         self._time += round(self.step(), Mundus.accuracy)
                     else:
@@ -147,7 +151,7 @@ class Actor:
                 if callable(self.till):
                     _till = round(self.till(), Mundus.accuracy)
                     while True:
-                        self.action()
+                        self.action(**self.kwargs)
                         if callable(self.step):
                             self._time += round(self.step(), Mundus.accuracy)
                         else:
@@ -163,7 +167,7 @@ class Actor:
                             break
                 else:
                     while True:
-                        self.action()
+                        self.action(**self.kwargs)
                         if callable(self.step):
                             self._time += round(self.step(), Mundus.accuracy)
                         else:
@@ -181,6 +185,11 @@ class Actor:
                             break
 
     def deactivate(self, terminate: bool = True):
+        """Deactivate the actor. If terminate is True, the actor will be terminated. If terminate is False, the actor will be put on hold.
+
+        Args:
+            terminate (bool, optional): if the actor should be terminated. Defaults to True.
+        """        
         # if the actor is already inactive, do nothing
         if self.inactive:
             return
@@ -208,6 +217,11 @@ class Actor:
                     self.timeline.events.remove(event)
 
     def activate(self, force: bool = True):
+        """Activate the actor. If force is True, the actor will be activated regardless of the waiting targets. If force is False, the actor will be activated only if all waiting targets are completed.
+
+        Args:
+            force (bool, optional): if the actor should be forced to be activated. Defaults to True.
+        """        
         # if the actor is already active, do nothing
         if self.terminated:
             warnings.warn(
@@ -235,31 +249,59 @@ class Actor:
                     self.timeline.schedule(self)
 
     def request(self, resource: Resource, amount: Union[int, float] = 1) -> bool:
+        """Request a resource from the resource pool. If the resource is available, the actor will perform the action. If the resource is not available, a exception will be throwed.
+
+        Args:
+            resource (Resource): the resource.
+            amount (Union[int, float], optional): the amount to request. Defaults to 1.
+
+        Returns:
+            bool: return True if the request is successful.
+        """        
         return resource.distribute(self, amount)
 
     def release(self, resource: Resource, amount: Optional[int | float] = None) -> bool:
+        """Release a resource to the resource pool. If the amount is not specified, the actor will release all the resources it has.
+
+        Args:
+            resource (Resource): the resource.
+            amount (Optional[int  |  float], optional): the amount to be released. Defaults to None.
+
+        Returns:
+            bool: return True if the release is successful.
+        """
         if amount is None:
             return resource.release(self)
         else:
             return resource.release(self, amount)
 
     def consume(self, producer: Producer, amount: int = 1):
+        """Consume a product from the producer. If the product is available, the actor will perform the action. If the product is not available, a exception will be throwed.
+
+        Args:
+            producer (Producer): the producer.
+            amount (int, optional): the amount to consume. Defaults to 1.
+        """
         return producer.distribute(self, amount)
 
     @property
     def id(self):
+        """The id of the actor."""
         return self._id
 
     @property
     def label(self):
+        """The label of the actor."""
         return self._label
 
     @property
     def priority(self):
+        """The priority of the actor."""
         return self._priority
 
     @property
     def action(self) -> Callable:
+        """The action of the actor."""
         if self._action is not None:
             return self._action
         else:
@@ -267,52 +309,70 @@ class Actor:
 
     @property
     def timeline(self):
+        """The timeline of the actor."""
         return self._timeline
 
     @property
     def time(self):
+        """the current time of the actor."""
         return round(self._time, Mundus.accuracy)
 
     @property
     def till(self):
+        """the end time of the actor."""
         return self._till
 
     @property
     def step(self):
+        """the step of the actor."""
         return self._step
 
     @property
     def status(self):
+        """the status of the actor."""
         return self._status
 
     @property
     def after(self):
+        """the actors that must be completed before this actor can be activated."""
         return self._after
 
     @property
     def active(self):
+        """if the actor is active."""
         return "active" in self.status
 
     @property
     def inactive(self):
+        """if the actor is inactive."""
         return "inactive" in self.status
 
     @property
     def onhold(self):
+        """if the actor is on hold."""
         return "onhold" in self.status
 
     @property
     def scheduled(self):
+        """if the actor is scheduled."""
         return "scheduled" in self.status
 
     @property
     def completed(self):
+        """if the actor is completed."""
         return "completed" in self.status
 
     @property
     def terminated(self):
+        """if the actor is terminated."""
         return "terminated" in self.status
 
     @property
     def followers(self):
+        """the actors that will be activated when this actor is completed."""
         return self._followers
+
+    @property
+    def kwargs(self):
+        """the kwargs of the actor's action function."""
+        return self._kwargs

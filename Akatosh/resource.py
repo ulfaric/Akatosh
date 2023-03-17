@@ -175,32 +175,40 @@ class Resource:
 
     @property
     def id(self) -> int:
+        """The id of the resource."""
         return self._id
 
     @property
     def label(self) -> str:
+        """The label of the resource."""
         return self._label
 
     @property
     def capacity(self) -> Union[int, float]:
+        """The capacity of the resource."""
         return self._capacity
 
     @property
     def claimed_quantity(self) -> Union[int, float]:
+        """The amount of resource claimed by users."""
         return self._claimed_quantity
 
     @property
     def available_quantity(self) -> Union[int, float]:
+        """The amount of resource available for distribution."""
         return self.capacity - self.claimed_quantity
 
     @property
     def claims(self) -> List[ResourceClaim]:
+        """The list of resource claims."""
         return self._claims
 
     @property
     def users(self):
+        """The list of users who have claimed the resource."""
         return [claim.user for claim in self.claims]
 
     @property
     def utilization(self) -> Union[int, float]:
+        """The utilization of the resource."""
         return self.claimed_quantity / self.capacity
