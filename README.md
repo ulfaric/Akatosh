@@ -28,7 +28,7 @@ There are serveral ways that you can create an event:
             print(message)
         Actor(action = hail, message = "All hail dragonborn!")
  
- 3. Create an event by subclass:
+3. Create an event by subclass:
  
          class Myevent(Actor):
 
@@ -36,6 +36,18 @@ There are serveral ways that you can create an event:
                 print("All hail dragonborn!")
 
          Myevent()
+
+4. Create with decorator (new!)
+
+        #directly create an event with a function:
+        @event()
+        def hail():
+            print(f"{Mundus.now}:\tHail Akatosh!")       
+
+        #create a on call event, that is the decorated function must be called to actually make the event
+        @event(on_call=True)
+        def dragon_shout(msg:str="Ros Fu Da!"):
+            print(f"{Mundus.now}:\t{msg}")
          
  To start the simulation,
  

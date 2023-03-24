@@ -16,13 +16,12 @@ class Actor:
     def __init__(
         self,
         action: Optional[Callable] = None,
-        timeline: Optional[Timeline] = None,
-        priority: int = 0,
         at: Union[int, float, Callable] = 0,
         step: Optional[int | float | Callable] = None,
         till: Optional[int | float | Callable] = None,
-        active: bool = True,
         after: Optional[Actor | List[Actor]] = None,
+        priority: int = 0,
+        active: bool = True,
         label: Optional[str] = None,
         **kwargs,
     ) -> None:
@@ -30,13 +29,12 @@ class Actor:
 
         Args:
             action (Optional[Callable], optional): the function that will happens. Defaults to None only if this is not a subclass of Actor.
-            timeline (Optional[Timeline], optional): which timeline this actor/event will happen. Defaults to None (not full implemented, leave it as None).
-            priority (int, optional): the priority of this actor/event. Defaults to 0.
             at (Union[int, float, Callable], optional): when the event starts. Defaults to 0.
             step (Optional[int  |  float  |  Callable], optional): next time the event starts. Defaults to None.
             till (Optional[int  |  float  |  Callable], optional): when the event stops. Defaults to None.
-            active (bool, optional): whether the event should be active directly. Defaults to True. If false, the actor must call activate() to activate the actor.
             after (Optional[Actor  |  List[Actor]], optional): whether the event should happens only if other event(s) happened. Defaults to None.
+            priority (int, optional): the priority of this actor/event. Defaults to 0.
+            active (bool, optional): whether the event should be active directly. Defaults to True. If false, the actor must call activate() to activate the actor.
             label (Optional[str], optional): a short description for this event. Defaults to None.
         """
 
@@ -50,10 +48,8 @@ class Actor:
         self._action = action
 
         # assign the timeline to this actor
-        if timeline is None:
-            self._timeline = Mundus.timeline
-        else:
-            self._timeline = timeline
+        self._timeline = Mundus.timeline
+
         self.timeline.actors.append(self)
 
         # assign the priority to this actor
@@ -63,7 +59,7 @@ class Actor:
         self._kwargs = kwargs
 
         # initialize the follower list
-        self._followers = list()
+        self._followers: List[Actor] = list()
 
         # assign the waiting target to this actor
         if after is not None:
@@ -190,7 +186,7 @@ class Actor:
 
         Args:
             terminate (bool, optional): if the actor should be terminated. Defaults to True.
-        """        
+        """
         # if the actor is already inactive, do nothing
         if self.inactive:
             return
@@ -222,7 +218,7 @@ class Actor:
 
         Args:
             force (bool, optional): if the actor should be forced to be activated. Defaults to True.
-        """        
+        """
         # if the actor is already active, do nothing
         if self.terminated:
             warnings.warn(
@@ -258,7 +254,7 @@ class Actor:
 
         Returns:
             bool: return True if the request is successful.
-        """        
+        """
         return resource.distribute(self, amount)
 
     def release(self, resource: Resource, amount: Optional[int | float] = None) -> bool:
@@ -377,3 +373,73 @@ class Actor:
     def kwargs(self):
         """the kwargs of the actor's action function."""
         return self._kwargs
+
+
+def event(
+    at: Union[int, float, Callable] = 0,
+    step: Optional[int | float | Callable] = None,
+    till: Optional[int | float | Callable] = None,
+    after: Optional[List[Actor] | Actor] = None,
+    priority: int = 0,
+    active: bool = True,
+    label: Optional[str] = None,
+    on_call: bool = False,
+):
+    """A decorator to create an event directly from a function.
+
+    Args:
+        at (Union[int, float, Callable], optional): when the event should occur, if both step and till are none, then the event only happens once. Defaults to 0.
+        step (Optional[int  |  float  |  Callable], optional): how frequently the event should occur, till must also be given. Defaults to None.
+        till (Optional[int  |  float  |  Callable], optional): when the event should end, step must also be given. Defaults to None.
+        after (Optional[List[Actor]  |  Actor], optional): the event(s) that must happens before this event. Defaults to None.
+        priority (int, optional): the priority of the event, if multiple event should happen at the same time, then the event with lower value as priority happens first. Defaults to 0.
+        active (bool, optional): whether the event should be active upon creation. Defaults to True.
+        label (Optional[str], optional): the short description of this event. Defaults to None.
+        on_call (bool, optional): if ture, the event will not be created until the decorated function is called. If false, the event will be create directly without need for calling the decorated function. Defaults to False.
+    """    
+    def create_event(func):
+        def _event(*args, **kwargs):
+            # class Event(Actor):
+            #     def __init__(
+            #         self,
+            #         at: Union[int, float, Callable] = 0,
+            #         step: Optional[int | float | Callable] = None,
+            #         till: Optional[int | float | Callable] = None,
+            #         after: Optional[Actor | List[Actor]] = None,
+            #         priority: int = 0,
+            #         active: bool = True,
+            #         label: Optional[str] = None,
+            #     ) -> None:
+            #         super().__init__(
+            #             at=at,
+            #             step=step,
+            #             till=till,
+            #             after=after,
+            #             priority=priority,
+            #             active=active,
+            #             label=label,
+            #         )
+
+            #     def action(self):
+            #         func(*args, **kwargs)
+
+            actor = Actor(
+                action=func,
+                at=at,
+                step=step,
+                till=till,
+                after=after,
+                priority=priority,
+                active=active,
+                label=label,
+                **kwargs,
+            )
+
+            return actor
+        if on_call:
+            return _event
+        else:
+            return _event()
+
+    return create_event
+
