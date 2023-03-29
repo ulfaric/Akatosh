@@ -87,6 +87,7 @@ class Resource:
         """Anonymous user get resource from resource pool. No resource claim is created."""
         if quantity <= self.available_quantity:
             self._claimed_quantity += quantity
+            self.records.append(ResourceUsageRecord(Mundus.now, self.claimed_quantity))
             return True
         else:
             raise ValueError(
@@ -97,6 +98,7 @@ class Resource:
         """Anonymous user put resource back to resource pool. No resource claim is checked."""
         if quantity <= self.claimed_quantity:
             self._claimed_quantity -= quantity
+            self.records.append(ResourceUsageRecord(Mundus.now, self.claimed_quantity))
             return True
         else:
             raise ValueError(
@@ -120,13 +122,13 @@ class Resource:
         """
         if quantity <= self.available_quantity:
             self._claimed_quantity += quantity
-            self.records.append(ResourceUsageRecord(Mundus.now, quantity))
             for claim in self.claims:
                 if claim.user is user:
                     claim._quantity += quantity
                     return True
             resource_claim = ResourceClaim(user, quantity)
             self.claims.append(resource_claim)
+            self.records.append(ResourceUsageRecord(Mundus.now, self.claimed_quantity))
             return True
         else:
             raise ValueError(
@@ -150,7 +152,6 @@ class Resource:
             bool: return True if the release is successful.
         """
         if user is None:
-            self.records.append(ResourceUsageRecord(Mundus.now, -self.claimed_quantity))
             self._claimed_quantity = 0
             self._claims.clear()
             return True
@@ -166,9 +167,6 @@ class Resource:
                                     )
                                 else:
                                     self._claimed_quantity -= claim.quantity
-                                    self.records.append(
-                                        ResourceUsageRecord(Mundus.now, -claim.quantity)
-                                    )
                                     self.claims.remove(claim)
                             else:
                                 if amount > claim.quantity:
@@ -177,9 +175,6 @@ class Resource:
                                     )
                                 else:
                                     self._claimed_quantity -= amount
-                                    self.records.append(
-                                        ResourceUsageRecord(Mundus.now, -amount)
-                                    )
                                     claim._quantity -= amount
                                     if claim.quantity == 0:
                                         self.claims.remove(claim)
@@ -193,9 +188,6 @@ class Resource:
                                 )
                             else:
                                 self._claimed_quantity -= claim.quantity
-                                self.records.append(
-                                    ResourceUsageRecord(Mundus.now, -claim.quantity)
-                                )
                                 self.claims.remove(claim)
                         else:
                             if amount > claim.quantity:
@@ -204,12 +196,10 @@ class Resource:
                                 )
                             else:
                                 self._claimed_quantity -= amount
-                                self.records.append(
-                                    ResourceUsageRecord(Mundus.now, -amount)
-                                )
                                 claim._quantity -= amount
                                 if claim.quantity == 0:
                                     self.claims.remove(claim)
+            self.records.append(ResourceUsageRecord(Mundus.now, self.claimed_quantity))
             return True
 
     @property
@@ -256,3 +246,45 @@ class Resource:
     def utilization(self) -> Union[int, float]:
         """The utilization of the resource."""
         return self.claimed_quantity / self.capacity
+
+    def utilization_in_past(
+        self,
+        period: Union[int, float],
+        at: Optional[Union[int, float]] = None,
+        aggrate: str = "AVG",
+    ):
+        """Get the resource utilization in the past period.
+
+        Args:
+            period (Union[int, float]): the period to look back.
+            at (Union[int, float], optional): from when to look back. Defaults to Mundus.now.
+            aggrate (str, optional): aggrate method. Defaults to "AVG". Can also choose from "MAX", "MIN".
+
+        Raises:
+            ValueError: _description_
+
+        Returns:
+            _type_: _description_
+        """
+        if at is None:
+            at = Mundus.now
+            usage_records = [
+                record.quantity
+                for record in self.records
+                if record.at >= at - period and record.at <= at
+            ]
+        else:
+            usage_records = [
+                record.quantity
+                for record in self.records
+                if record.at >= at - period and record.at <= at
+            ]
+        print(usage_records)
+        if aggrate == "MAX":
+            return max(usage_records) / self.capacity
+        elif aggrate == "MIN":
+            return min(usage_records) / self.capacity
+        elif aggrate == "AVG":
+            return sum(usage_records) / len(usage_records) / self.capacity
+        else:
+            raise ValueError(f"Aggrate method {aggrate} is not supported.")
