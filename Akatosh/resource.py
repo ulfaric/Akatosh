@@ -3,6 +3,8 @@ from typing import Union, List, Optional, TYPE_CHECKING
 from dataclasses import dataclass
 from uuid import uuid4
 
+from .universe import Mundus
+
 if TYPE_CHECKING:
     from .actor import Actor
 
@@ -29,14 +31,36 @@ class ResourceClaim:
         return self._quantity
 
 
-class Resource:
+@dataclass
+class ResourceUsageRecord:
+    """Resource usage record."""
 
+    _at: Union[int, float]
+    _quantity: Union[int, float]
+
+    def __eq__(self, __o: ResourceUsageRecord) -> bool:
+        if self.at == __o.at and self.quantity == __o.quantity:
+            return True
+        else:
+            return False
+
+    @property
+    def at(self) -> Union[int, float]:
+        return self._at
+
+    @property
+    def quantity(self) -> Union[int, float]:
+        return self._quantity
+
+
+class Resource:
     _id: int
     _label: str
     _capacity: Union[int, float]
     _claimed_quantity: Union[int, float]
 
     _claims: List[ResourceClaim]
+    _records: List[ResourceUsageRecord]
 
     def __init__(
         self,
@@ -57,6 +81,7 @@ class Resource:
         self._claimed_quantity = init_claimed_quantity
 
         self._claims = list()
+        self._records = list()
 
     def get(self, quantity: Union[int, float]) -> bool:
         """Anonymous user get resource from resource pool. No resource claim is created."""
@@ -95,6 +120,7 @@ class Resource:
         """
         if quantity <= self.available_quantity:
             self._claimed_quantity += quantity
+            self.records.append(ResourceUsageRecord(Mundus.now, quantity))
             for claim in self.claims:
                 if claim.user is user:
                     claim._quantity += quantity
@@ -124,6 +150,7 @@ class Resource:
             bool: return True if the release is successful.
         """
         if user is None:
+            self.records.append(ResourceUsageRecord(Mundus.now, -self.claimed_quantity))
             self._claimed_quantity = 0
             self._claims.clear()
             return True
@@ -139,6 +166,9 @@ class Resource:
                                     )
                                 else:
                                     self._claimed_quantity -= claim.quantity
+                                    self.records.append(
+                                        ResourceUsageRecord(Mundus.now, -claim.quantity)
+                                    )
                                     self.claims.remove(claim)
                             else:
                                 if amount > claim.quantity:
@@ -147,6 +177,9 @@ class Resource:
                                     )
                                 else:
                                     self._claimed_quantity -= amount
+                                    self.records.append(
+                                        ResourceUsageRecord(Mundus.now, -amount)
+                                    )
                                     claim._quantity -= amount
                                     if claim.quantity == 0:
                                         self.claims.remove(claim)
@@ -160,6 +193,9 @@ class Resource:
                                 )
                             else:
                                 self._claimed_quantity -= claim.quantity
+                                self.records.append(
+                                    ResourceUsageRecord(Mundus.now, -claim.quantity)
+                                )
                                 self.claims.remove(claim)
                         else:
                             if amount > claim.quantity:
@@ -168,6 +204,9 @@ class Resource:
                                 )
                             else:
                                 self._claimed_quantity -= amount
+                                self.records.append(
+                                    ResourceUsageRecord(Mundus.now, -amount)
+                                )
                                 claim._quantity -= amount
                                 if claim.quantity == 0:
                                     self.claims.remove(claim)
@@ -202,6 +241,11 @@ class Resource:
     def claims(self) -> List[ResourceClaim]:
         """The list of resource claims."""
         return self._claims
+
+    @property
+    def records(self) -> List[ResourceUsageRecord]:
+        """The list of resource records."""
+        return self._records
 
     @property
     def users(self):
