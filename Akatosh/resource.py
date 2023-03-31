@@ -280,14 +280,14 @@ class Resource:
                 if record.at >= at - period and record.at <= at
             ]
 
+        if len(usage_records) == 0:
+            return self.available_quantity / self.capacity
+
         if aggrate == "MAX":
-            return max(usage_records) / self.capacity / period
+            return max(usage_records) / self.capacity 
         elif aggrate == "MIN":
-            return min(usage_records) / self.capacity / period
+            return min(usage_records) / self.capacity 
         elif aggrate == "AVG":
-            if len(usage_records) == 0:
-                return sum(usage_records) / 1 / self.capacity / period
-            else:
-                return sum(usage_records) / len(usage_records) / self.capacity / period
+            return sum(usage_records) / len(usage_records) / self.capacity 
         else:
             raise ValueError(f"Aggrate method {aggrate} is not supported.")
