@@ -281,7 +281,7 @@ class Resource:
             ]
 
         if len(usage_records) == 0:
-            return self.available_quantity / self.capacity
+            return self.claimed_quantity / self.capacity
 
         if aggrate == "MAX":
             return max(usage_records) / self.capacity 
