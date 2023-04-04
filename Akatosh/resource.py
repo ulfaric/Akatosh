@@ -43,6 +43,9 @@ class ResourceUsageRecord:
             return True
         else:
             return False
+        
+    def __str__(self) -> str:
+        return f"{self.at}:{self.quantity}"
 
     @property
     def at(self) -> Union[int, float]:
@@ -251,43 +254,39 @@ class Resource:
         self,
         period: Union[int, float],
         at: Optional[Union[int, float]] = None,
-        aggrate: str = "AVG",
     ):
         """Get the resource utilization in the past period.
 
         Args:
             period (Union[int, float]): the period to look back.
             at (Union[int, float], optional): from when to look back. Defaults to Mundus.now.
-            aggrate (str, optional): aggrate method. Defaults to "AVG". Can also choose from "MAX", "MIN".
-
-        Raises:
-            ValueError: _description_
-
-        Returns:
-            _type_: _description_
         """
         if at is None:
             at = Mundus.now
             usage_records = [
-                record.quantity
+                record
                 for record in self.records
                 if record.at >= at - period and record.at <= at
             ]
         else:
             usage_records = [
-                record.quantity
+                record
                 for record in self.records
                 if record.at >= at - period and record.at <= at
             ]
 
         if len(usage_records) == 0:
             return self.claimed_quantity / self.capacity
-
-        if aggrate == "MAX":
-            return max(usage_records) / self.capacity 
-        elif aggrate == "MIN":
-            return min(usage_records) / self.capacity 
-        elif aggrate == "AVG":
-            return sum(usage_records) / len(usage_records) / self.capacity 
         else:
-            raise ValueError(f"Aggrate method {aggrate} is not supported.")
+            usage_records.sort(key=lambda x: x.at)
+            weighted_average_usage = 0
+            for i, record in enumerate(usage_records):
+                if i == 0:
+                    weighted_average_usage += (
+                        record.quantity * (record.at - (at-period)) / period
+                    )
+                else:
+                    weighted_average_usage += (
+                        record.quantity * (record.at - usage_records[i - 1].at) / period
+                    )
+            return weighted_average_usage / self.capacity
