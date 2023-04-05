@@ -399,30 +399,6 @@ def event(
     """    
     def create_event(func):
         def _event(*args, **kwargs):
-            # class Event(Actor):
-            #     def __init__(
-            #         self,
-            #         at: Union[int, float, Callable] = 0,
-            #         step: Optional[int | float | Callable] = None,
-            #         till: Optional[int | float | Callable] = None,
-            #         after: Optional[Actor | List[Actor]] = None,
-            #         priority: int = 0,
-            #         active: bool = True,
-            #         label: Optional[str] = None,
-            #     ) -> None:
-            #         super().__init__(
-            #             at=at,
-            #             step=step,
-            #             till=till,
-            #             after=after,
-            #             priority=priority,
-            #             active=active,
-            #             label=label,
-            #         )
-
-            #     def action(self):
-            #         func(*args, **kwargs)
-
             actor = Actor(
                 action=func,
                 at=at,
