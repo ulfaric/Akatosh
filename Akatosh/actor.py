@@ -1,7 +1,6 @@
 from __future__ import annotations
-from typing import Generator, List, Optional, Union, Callable, TYPE_CHECKING
+from typing import List, Optional, Union, Callable, TYPE_CHECKING
 from uuid import uuid4
-from math import inf
 import warnings
 
 from Akatosh import Mundus
@@ -9,7 +8,6 @@ from Akatosh import Mundus
 if TYPE_CHECKING:
     from .resource import Resource
     from .producer import Producer
-    from .timeline import Timeline
 
 
 class Actor:
@@ -396,7 +394,8 @@ def event(
         active (bool, optional): whether the event should be active upon creation. Defaults to True.
         label (Optional[str], optional): the short description of this event. Defaults to None.
         on_call (bool, optional): if ture, the event will not be created until the decorated function is called. If false, the event will be create directly without need for calling the decorated function. Defaults to False.
-    """    
+    """
+
     def create_event(func):
         def _event(*args, **kwargs):
             actor = Actor(
@@ -412,10 +411,10 @@ def event(
             )
 
             return actor
+
         if on_call:
             return _event
         else:
             return _event()
 
     return create_event
-
