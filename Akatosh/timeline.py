@@ -36,23 +36,6 @@ class Timeline:
         self.events.sort(key=lambda event: event.at)
         if actor.scheduled is False:
             actor.status.append('scheduled')
-
-    def forward(self, till: Union[int, float]):
-        """Forward the timeline to a given time."""
-        while True:
-            if len(self.events) != 0:
-                next_event = self.events.pop(0)
-                if self.now < next_event.at:
-                    self._time = next_event.at
-                if next_event.at <= till:
-                    try:
-                        next(next_event.actor.perform())
-                    except StopIteration:
-                        pass
-                else:
-                    break
-            else:
-                break
             
     @property
     def now(self):

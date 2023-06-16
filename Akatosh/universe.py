@@ -23,15 +23,34 @@ class Universe:
         self._timeline = Timeline()
         self._till = int()
         self._accuracy = accuracy
+        self._early_stop = False
 
     def simulate(self, till: Union[int, float] = inf) -> None:
         """Simulate the universe to a given time."""
         self._till = till
-        while self.timeline.now <= self.till:
-            self.timeline.forward(self.till)
-            if len(self.timeline.events) == 0:
+        while True:
+            
+            if self.early_stop:
                 break
-
+            
+            if len(self.timeline.events) != 0:
+                next_event = self.timeline.events.pop(0)
+                if self.now < next_event.at:
+                    self.timeline._time = next_event.at
+                if next_event.at <= self.till:
+                    try:
+                        next(next_event.actor.perform())
+                    except StopIteration:
+                        pass
+                else:
+                    break
+            else:
+                break
+            
+    def stop(self) -> None:
+        """Can be called during event to stop the simulation."""
+        self._early_stop = True
+        
     @property
     def timeline(self) -> Timeline:
         """The timeline of the universe."""
@@ -56,4 +75,8 @@ class Universe:
     def accuracy(self, value: int) -> None:
         self._accuracy = value
 
+    @property
+    def early_stop(self) -> bool:
+        return self._early_stop
+    
 Mundus = Universe()
