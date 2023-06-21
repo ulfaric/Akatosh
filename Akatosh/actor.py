@@ -99,7 +99,7 @@ class Actor:
             self._step = step
 
         if callable(till):
-            self._till = till
+            self._till = round(till(), Mundus.accuracy)
         elif till is not None:
             self._till = round(till, Mundus.accuracy)
         else:
@@ -143,41 +143,23 @@ class Actor:
                     yield self.timeline.schedule(self)
             # continuous actor with step size and end time
             elif self.step is not None and self.till is not None:
-                if callable(self.till):
-                    _till = round(self.till(), Mundus.accuracy)
-                    while True:
-                        self.action(**self.kwargs)
-                        if callable(self.step):
-                            self._time += round(self.step(), Mundus.accuracy)
-                        else:
-                            self._time += round(self.step, Mundus.accuracy)
-                        if self.time <= _till:  # type: ignore
-                            yield self.timeline.schedule(self)
-                        else:
+                while True:
+                    self.action(**self.kwargs)
+                    if callable(self.step):
+                        self._time += round(self.step(), Mundus.accuracy)
+                    else:
+                        self._time += round(self.step, Mundus.accuracy)
+                    if self.time <= self.till:  # type: ignore
+                        yield self.timeline.schedule(self)
+                    else:
+                        # if this is the last step, activate all followers
+                        if self.time >= self.till:
                             self.status.append("completed")
                             self.status.append("terminated")
                             for actor in self.followers:
                                 if actor.onhold:
                                     actor.activate(force=False)
-                            break
-                else:
-                    while True:
-                        self.action(**self.kwargs)
-                        if callable(self.step):
-                            self._time += round(self.step(), Mundus.accuracy)
-                        else:
-                            self._time += round(self.step, Mundus.accuracy)
-                        if self.time <= self.till:  # type: ignore
-                            yield self.timeline.schedule(self)
-                        else:
-                            # if this is the last step, activate all followers
-                            if self.time >= self.till:
-                                self.status.append("completed")
-                                self.status.append("terminated")
-                                for actor in self.followers:
-                                    if actor.onhold:
-                                        actor.activate(force=False)
-                            break
+                        break
 
     def deactivate(self, terminate: bool = True):
         """Deactivate the actor. If terminate is True, the actor will be terminated. If terminate is False, the actor will be put on hold.
