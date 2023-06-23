@@ -1,292 +1,157 @@
 from __future__ import annotations
-from typing import Union, List, Optional, TYPE_CHECKING
-from dataclasses import dataclass
-from uuid import uuid4
 
-from .universe import Mundus
+from typing import Callable, List, Tuple
 
-if TYPE_CHECKING:
-    from .actor import Actor
-
-
-@dataclass
-class ResourceClaim:
-    """Resource claim record of a user. Each user only have one resource claim for a resource."""
-
-    _user: Union[Actor, object]
-    _quantity: Union[int, float]
-
-    def __eq__(self, __o: ResourceClaim) -> bool:
-        if self.user is __o.user:
-            return True
-        else:
-            return False
-
-    @property
-    def user(self) -> Union[Actor, object]:
-        return self._user
-
-    @property
-    def quantity(self) -> Union[int, float]:
-        return self._quantity
-
-
-@dataclass
-class ResourceUsageRecord:
-    """Resource usage record."""
-
-    _at: Union[int, float]
-    _quantity: Union[int, float]
-
-    def __eq__(self, __o: ResourceUsageRecord) -> bool:
-        if self.at == __o.at and self.quantity == __o.quantity:
-            return True
-        else:
-            return False
-        
-    def __str__(self) -> str:
-        return f"{self.at}:{self.quantity}"
-
-    @property
-    def at(self) -> Union[int, float]:
-        return self._at
-
-    @property
-    def quantity(self) -> Union[int, float]:
-        return self._quantity
+from .logger import logger
+from .universe import mundus
 
 
 class Resource:
-    _id: int
-    _label: str
-    _capacity: Union[int, float]
-    _claimed_quantity: Union[int, float]
-
-    _claims: List[ResourceClaim]
-    _records: List[ResourceUsageRecord]
-
     def __init__(
         self,
-        label: Optional[str] = None,
-        capacity: Union[int, float] = 1,
-        init_claimed_quantity: Union[int, float] = 0,
+        capacity: int | float | Callable,
+        initial_amount: int | float | Callable | None = None,
+        label: str | None = None,
     ) -> None:
-        """Create a resource object. The resource can be claimed by users, or distribute to users. The resource can be released from users. The resource can be put back or get from the resource pool anonymously.
-
-        Args:
-            label (Optional[str], optional): the label of the resources. Defaults to None.
-            capacity (Union[int, float], optional): _description_. the capacity of the resource to 1.
-            init_claimed_quantity (Union[int, float], optional): the initial amount of resource in use. Defaults to 0.
-        """
-        self._id = uuid4().int
-        self._label = label or str()
-        self._capacity = capacity
-        self._claimed_quantity = init_claimed_quantity
-
-        self._claims = list()
-        self._records = list()
-
-    def get(self, quantity: Union[int, float]) -> bool:
-        """Anonymous user get resource from resource pool. No resource claim is created."""
-        if quantity <= self.available_quantity:
-            self._claimed_quantity += quantity
-            self.records.append(ResourceUsageRecord(Mundus.now, self.claimed_quantity))
-            return True
+        if callable(capacity):
+            self._capacity = capacity()
         else:
-            raise ValueError(
-                f"Quantity {quantity} is greater than available quantity {self.available_quantity} of resource {self.label}."
-            )
-
-    def put(self, quantity: Union[int, float]) -> bool:
-        """Anonymous user put resource back to resource pool. No resource claim is checked."""
-        if quantity <= self.claimed_quantity:
-            self._claimed_quantity -= quantity
-            self.records.append(ResourceUsageRecord(Mundus.now, self.claimed_quantity))
-            return True
-        else:
-            raise ValueError(
-                f"Quantity {quantity} is greater than claimed quantity {self.claimed_quantity} of resource {self.label}."
-            )
-
-    def distribute(
-        self, user: Union[Actor, object], quantity: Union[int, float]
-    ) -> bool:
-        """Distribute a amount of resource to a user. If the user already has a claim, the quantity will be added to the claim. Otherwise, a new claim will be created.
-
-        Args:
-            user (Union[Actor, object]): the user to distribute resource to.
-            quantity (Union[int, float]): the amount of resource to distribute.
-
-        Raises:
-            ValueError: if the quantity is greater than available quantity.
-
-        Returns:
-            bool: return True if the distribution is successful.
-        """
-        if quantity <= self.available_quantity:
-            self._claimed_quantity += quantity
-            for claim in self.claims:
-                if claim.user is user:
-                    claim._quantity += quantity
-                    return True
-            resource_claim = ResourceClaim(user, quantity)
-            self.claims.append(resource_claim)
-            self.records.append(ResourceUsageRecord(Mundus.now, self.claimed_quantity))
-            return True
-        else:
-            raise ValueError(
-                f"Quantity {quantity} is greater than available quantity {self.available_quantity} of resource {self.label}."
-            )
-
-    def release(
-        self,
-        user: Optional[Actor | List[Actor] | object | List[object]] = None,
-        amount: Optional[int | float] = None,
-    ) -> bool:
-        """Release resource from a user or group of users. If the user is no longer using any resource, the resource claim will be removed. if no user is specified, all resource claims will be removed.
-        Args:
-            user (Optional[Actor  |  List[Actor]  |  object  |  List[object]], optional): the user or group of users. Defaults to None.
-            amount (Optional[int  |  float], optional): the amount of resource to release. Defaults to None.
-
-        Raises:
-            ValueError: raised if the amount is greater than the user claimed quantity.
-
-        Returns:
-            bool: return True if the release is successful.
-        """
-        if user is None:
-            self._claimed_quantity = 0
-            self._claims.clear()
-            return True
-        else:
-            if isinstance(user, list):
-                for u in user:
-                    for claim in self.claims[:]:
-                        if claim.user is u:
-                            if amount is None:
-                                if claim.quantity > self.claimed_quantity:
-                                    raise ValueError(
-                                        f"Resource claim's quantity {claim.quantity} is greater than claimed quantity {self.claimed_quantity} of resource {self.label}."
-                                    )
-                                else:
-                                    self._claimed_quantity -= claim.quantity
-                                    self.claims.remove(claim)
-                            else:
-                                if amount > claim.quantity:
-                                    raise ValueError(
-                                        f"User tries to release {amount} units, but only {claim.quantity} units are claimed by the user from resource {self.label}."
-                                    )
-                                else:
-                                    self._claimed_quantity -= amount
-                                    claim._quantity -= amount
-                                    if claim.quantity == 0:
-                                        self.claims.remove(claim)
+            self._capacity = capacity
+        if initial_amount:
+            if callable(initial_amount):
+                if initial_amount() > self.capacity:
+                    raise ValueError("Initial amount is greater than capacity.")
+                else:
+                    self._amount = initial_amount()
             else:
-                for claim in self.claims[:]:
-                    if claim.user is user:
-                        if amount is None:
-                            if claim.quantity > self.claimed_quantity:
-                                raise ValueError(
-                                    f"Resource claim's quantity {claim.quantity} is greater than claimed quantity {self.claimed_quantity} of resource {self.label}."
-                                )
-                            else:
-                                self._claimed_quantity -= claim.quantity
-                                self.claims.remove(claim)
+                if initial_amount > self.capacity:
+                    raise ValueError("Initial amount is greater than capacity.")
+                else:
+                    self._amount = initial_amount
+        else:
+            self._amount = self.capacity
+        self._label = label
+        self._records: List[Tuple[object, int | float]] = list()
+        self._usage_records: List[Tuple[int | float, int | float]] = list()
+
+    def get(self, amount: int | float) -> None:
+        if amount > self.amount:
+            raise ValueError(f"Not enough amount in Resource {self.label}.")
+        else:
+            self._amount -= amount
+            self.usage_records.append((mundus.now, self.amount))
+
+    def put(self, amount: int | float) -> None:
+        if amount > self.occupied:
+            raise ValueError(f"Not enough capacity in Resource {self.label}.")
+        else:
+            self._amount += amount
+            self.usage_records.append((mundus.now, self.amount))
+
+    def distribute(self, user: object, amount: int | float) -> None:
+        if amount > self.amount:
+            raise ValueError(f"Not enough amount in Resource {self.label}.")
+        else:
+            self._amount -= amount
+            if user in self.users:
+                for index, record in enumerate(self.records):
+                    if record[0] is user:
+                        self.records[index] = (user, record[1] + amount)
+                        break
+            else:
+                self.records.append((user, amount))
+            self.usage_records.append((mundus.now, self.amount))
+            logger.debug(f"Resource {self.label} distributed {amount} to {user}.")
+
+    def collect(self, user: object, amount: int | float | None = None) -> None:
+        if user not in self.users:
+            raise ValueError(f"User {user} is not using Resource {self.label}.")
+        if amount is None:
+            for index, record in enumerate(self.records):
+                if record[0] is user:
+                    self._amount += record[1]
+                    self.usage_records.append((mundus.now, self.amount))
+                    logger.debug(
+                        f"Resource {self.label} collected {amount} from {user}."
+                    )
+                    break
+        else:
+            for index, record in enumerate(self.records):
+                if record[0] is user:
+                    if record[1] < amount:
+                        raise ValueError(
+                            f"{user} occupied {record[1]} of Resource {self.label}, less than {amount}."
+                        )
+                    else:
+                        self.records[index] = (user, record[1] - amount)
+                        self._amount += amount
+                        self.usage_records.append((mundus.now, self.amount))
+                        logger.debug(
+                            f"Resource {self.label} collected {amount} from {user}."
+                        )
+                        break
+
+    def usage(self, duration: int | float | Callable | None = None):
+        if duration:
+            if callable(duration):
+                after = mundus.now - duration()
+            else:
+                after = mundus.now - duration
+            if after < 0:
+                after = 0
+            usage_records = [
+                usage_record
+                for usage_record in self.usage_records
+                if usage_record[0] >= after
+            ]
+            if len(usage_records) == 0:
+                return 1 - (self.amount / self.capacity)
+            else:
+                if usage_records[-1][0] - after == 0:
+                    return 1 - (usage_records[-1][1] / self.capacity)
+                else:
+                    weighted_overall_amount = 0
+                    for index, record in enumerate(usage_records):
+                        if index == 0:
+                            weighted_overall_amount += record[1] * (record[0] - after)
+                        elif index == len(usage_records) - 1:
+                            weighted_overall_amount += record[1] * (
+                                mundus.now - usage_records[index - 1][0]
+                            )
                         else:
-                            if amount > claim.quantity:
-                                raise ValueError(
-                                    f"User tries to release {amount} units, but only {claim.quantity} units are claimed by the user from resource {self.label}."
-                                )
-                            else:
-                                self._claimed_quantity -= amount
-                                claim._quantity -= amount
-                                if claim.quantity == 0:
-                                    self.claims.remove(claim)
-            self.records.append(ResourceUsageRecord(Mundus.now, self.claimed_quantity))
-            return True
+                            weighted_overall_amount += record[1] * (
+                                record[0] - usage_records[index - 1][0]
+                            )
+                    return 1 - (
+                        weighted_overall_amount / (usage_records[-1][0] - after)
+                    )
+        else:
+            return 1 - (self.amount / self.capacity)
 
     @property
-    def id(self) -> int:
-        """The id of the resource."""
-        return self._id
+    def amount(self) -> int | float:
+        return self._amount
 
     @property
-    def label(self) -> str:
-        """The label of the resource."""
-        return self._label
-
-    @property
-    def capacity(self) -> Union[int, float]:
-        """The capacity of the resource."""
+    def capacity(self) -> int | float:
         return self._capacity
 
     @property
-    def claimed_quantity(self) -> Union[int, float]:
-        """The amount of resource claimed by users."""
-        return self._claimed_quantity
+    def occupied(self) -> int | float:
+        return self.capacity - self.amount
 
     @property
-    def available_quantity(self) -> Union[int, float]:
-        """The amount of resource available for distribution."""
-        return self.capacity - self.claimed_quantity
+    def label(self) -> str | None:
+        return self._label
 
     @property
-    def claims(self) -> List[ResourceClaim]:
-        """The list of resource claims."""
-        return self._claims
-
-    @property
-    def records(self) -> List[ResourceUsageRecord]:
-        """The list of resource records."""
+    def records(self) -> List[Tuple[object, int | float]]:
         return self._records
 
     @property
-    def users(self):
-        """The list of users who have claimed the resource."""
-        return [claim.user for claim in self.claims]
+    def usage_records(self) -> List[Tuple[int | float, int | float]]:
+        return self._usage_records
 
     @property
-    def utilization(self) -> Union[int, float]:
-        """The utilization of the resource."""
-        return self.claimed_quantity / self.capacity
-
-    def utilization_in_past(
-        self,
-        period: Union[int, float],
-        at: Optional[Union[int, float]] = None,
-    ):
-        """Get the resource utilization in the past period.
-
-        Args:
-            period (Union[int, float]): the period to look back.
-            at (Union[int, float], optional): from when to look back. Defaults to Mundus.now.
-        """
-        if at is None:
-            at = Mundus.now
-            usage_records = [
-                record
-                for record in self.records
-                if record.at >= at - period and record.at <= at
-            ]
-        else:
-            usage_records = [
-                record
-                for record in self.records
-                if record.at >= at - period and record.at <= at
-            ]
-
-        if len(usage_records) == 0:
-            return self.claimed_quantity / self.capacity
-        else:
-            usage_records.sort(key=lambda x: x.at)
-            weighted_average_usage = 0
-            for i, record in enumerate(usage_records):
-                if i == 0:
-                    weighted_average_usage += (
-                        record.quantity * (record.at - (at-period)) / period
-                    )
-                else:
-                    weighted_average_usage += (
-                        record.quantity * (record.at - usage_records[i - 1].at) / period
-                    )
-            return weighted_average_usage / self.capacity
+    def users(self) -> List[object]:
+        return [record[0] for record in self._records]
