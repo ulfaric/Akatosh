@@ -147,6 +147,13 @@ def event(
     **kwargs,
 ):
     def _event(func: Callable):
-        return Event(at, precursor, func, priority, label, **kwargs)
+        return Event(
+            at=at,
+            precursor=precursor,
+            action=func,
+            priority=priority,
+            label=label,
+            **kwargs,
+        )
 
     return _event

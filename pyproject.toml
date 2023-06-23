@@ -1,6 +1,6 @@
 [project]
 name = "Akatosh"
-version = "2.0.1"
+version = "2.0.0"
 authors = [{ name = "Yifei Ren", email = "ryf0510@live.com" }]
 description = "A simple implement for discrete events simulation."
 readme = "README.md"
@@ -18,7 +18,3 @@ classifiers = [
 [tool.setuptools]
 packages = ["Akatosh"]
 
-[tool.pytest.ini_options]
-minversion = "6.0"
-addopts = "-ra -q"
-testpaths = ["test"]
