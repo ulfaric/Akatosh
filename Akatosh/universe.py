@@ -19,12 +19,19 @@ class Universe:
         self._future_events: List[Event] = list()
         self._current_events: List[Event] = list()
         self._past_events: List[Event] = list()
+        self._early_stop: bool = False
         self.set_logger(logging.ERROR)
 
-    async def akatosh(self):
+    async def akatosh(self, till: int | float | None = None):
         while len(self.future_events) != 0:
+            if self.early_stop:
+                return
+
             if self.now < min(event.at for event in self.future_events):
                 self._now = min(event.at for event in self.future_events)
+                if till:
+                    if self.now >= till:
+                        return
                 logger.debug(f"Time: {self.now}")
 
             for event in self.future_events:
@@ -45,8 +52,8 @@ class Universe:
 
             await asyncio.gather(*[actor._perform() for actor in self.current_events])
 
-    def simulate(self):
-        asyncio.run(self.akatosh())
+    def simulate(self, till: int | float | None = None):
+        asyncio.run(self.akatosh(till))
 
     def set_logger(self, level: int):
         logger.setLevel(level)
@@ -70,6 +77,14 @@ class Universe:
     @property
     def past_events(self) -> List[Event]:
         return self._past_events
+
+    @property
+    def early_stop(self) -> bool:
+        return self._early_stop
+
+    @early_stop.setter
+    def early_stop(self, value: bool):
+        self._early_stop = value
 
 
 mundus = Universe()
