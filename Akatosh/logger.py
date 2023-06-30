@@ -1,6 +1,6 @@
 import logging
 
-logger = logging.getLogger("PyCloudSim")
+logger = logging.getLogger("Akatosh")
 formatter = logging.Formatter("%(asctime)s\t%(levelname)s\t%(message)s")
 
 stream_handler = logging.StreamHandler()

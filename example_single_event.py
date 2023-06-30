@@ -12,4 +12,4 @@ def hellow_world():
     print(f"{mundus.now}:\tHello World!")
 
 mundus.set_logger(logging.DEBUG)
-mundus.simulate(3)
+mundus.simulate(6)

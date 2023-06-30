@@ -1,11 +1,12 @@
 from __future__ import annotations
 
-from math import inf
-from typing import Callable, List
+from abc import abstractmethod
+from typing import Any, Callable, List
+from uuid import uuid4
 
+from .logger import logger
 from .states import State
 from .universe import mundus
-from .logger import logger
 
 
 class Event:
@@ -18,6 +19,7 @@ class Event:
         label: str | None = None,
         **kwargs,
     ) -> None:
+        self._id = uuid4().int
         # set the time
         if callable(at):
             self._at = round(at(), mundus.resolution)
@@ -82,13 +84,16 @@ class Event:
             raise RuntimeError(f"Event {self.label} has already ended.")
         self.state = State.CANCELED
 
+    @abstractmethod
     async def _perform(self):
-        if self.action:
-            self.action()
-        mundus.current_events.remove(self)
-        mundus.past_events.append(self)
-        self._end()
-        logger.debug(f"Event {self.label} is ended.")
+        pass
+
+    def __eq__(self, _o: Event) -> bool:
+        return self.id == _o.id
+
+    @property
+    def id(self) -> int:
+        return self._id
 
     @property
     def label(self) -> str | None:
@@ -139,6 +144,17 @@ class Event:
         return State.ENDED == self.state
 
 
+class InstantEvent(Event):
+
+    async def _perform(self):
+        if self.action:
+            self.action()
+        # mundus.current_events.remove(self)
+        # mundus.past_events.append(self)
+        self._end()
+        logger.debug(f"Event {self.label} is ended.")
+
+
 def event(
     at: int | float | Callable,
     precursor: Event | List[Event] | None = None,
@@ -147,7 +163,7 @@ def event(
     **kwargs,
 ):
     def _event(func: Callable):
-        return Event(
+        return InstantEvent(
             at=at,
             precursor=precursor,
             action=func,
@@ -157,3 +173,67 @@ def event(
         )
 
     return _event
+
+
+class ContinousEvent(Event):
+    def __init__(
+        self,
+        at: int | float | Callable[..., Any],
+        step: int | float | Callable[..., Any],
+        duration: int | float | Callable[..., Any],
+        precursor: Event | List[Event] | None = None,
+        action: Callable[..., Any] | None = None,
+        priority: int | float | Callable[..., Any] = 0,
+        label: str | None = None,
+        **kwargs,
+    ) -> None:
+        super().__init__(
+            at=at,
+            precursor=precursor,
+            action=action,
+            priority=priority,
+            label=label,
+            **kwargs,
+        )
+        self._step = step
+        if callable(duration):
+            self._duration = round(duration(), mundus.resolution)
+        else:
+            self._duration = round(duration, mundus.resolution)
+        self._sub_events: List[InstantEvent] = list()
+
+    async def _perform(self):
+        if self.action:
+            if mundus.now <= self.at + self.duration:
+                self.action()
+                if callable(self.step):
+                    next_step = round(self.step(), mundus.resolution) + mundus.now
+                else:
+                    next_step = round(self.step, mundus.resolution) + mundus.now
+                if next_step <= self.at + self.duration:
+                    self.sub_events.append(
+                        InstantEvent(
+                            at=next_step,
+                            step=self.step,
+                            duration=self.duration,
+                            precursor=self.precursor,
+                            action=self._perform,
+                            priority=self.priority,
+                            label=self.label,
+                        )
+                    )
+                    logger.debug(f"Event {self.label} next step is at {next_step}.")
+                else:
+                    logger.debug(f"Event {self.label} is ended.")
+
+    @property
+    def step(self) -> int | float | Callable[..., Any]:
+        return self._step
+
+    @property
+    def duration(self) -> int | float:
+        return self._duration
+
+    @property
+    def sub_events(self) -> List[InstantEvent]:
+        return self._sub_events

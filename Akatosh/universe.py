@@ -4,9 +4,8 @@ import asyncio
 import logging
 from typing import TYPE_CHECKING, List
 
-from .states import State
-
 from .logger import logger
+from .states import State
 
 if TYPE_CHECKING:
     from .event import Event
@@ -40,17 +39,39 @@ class Universe:
                         logger.debug(f"Event {event.label} is triggered.")
                         self.future_events.remove(event)
                         self.current_events.append(event)
-                    else:
-                        if event.state == State.CANCELED:
-                            logger.debug(f"Event {event.label} is canceled.")
-                        else:
-                            logger.debug(f"Event {event.label} is overdue.")
+                    elif event.state == State.CANCELED:
+                        logger.debug(f"Event {event.label} is canceled.")
                         self.future_events.remove(event)
                         self.past_events.append(event)
                         event.state = State.ENDED
-            self.current_events.sort(key=lambda event: event.priority)
+                    elif event.state == State.INACTIVE:
+                        logger.debug(f"Event {event.label} is overdue.")
+                        self.future_events.remove(event)
+                        self.past_events.append(event)
+                        event.state = State.ENDED
+                    elif event.state == State.ENDED:
+                        raise RuntimeError(
+                            f"Event {event.label} is ended but inside future events queue."
+                        )
+                    else:
+                        raise RuntimeError(f"Event {event.label} is in unknown state.")
+                else:
+                    continue
 
-            await asyncio.gather(*[actor._perform() for actor in self.current_events])
+            while len(self.current_events) != 0:
+                priority = min(event.priority for event in self.current_events)
+                await asyncio.gather(
+                    *[
+                        event._perform()
+                        for event in self.current_events
+                        if event.priority == priority
+                    ]
+                )
+                for event in [
+                    event for event in self.current_events if event.priority == priority
+                ]:
+                    self.current_events.remove(event)
+                    self.past_events.append(event)
 
     def simulate(self, till: int | float | None = None):
         asyncio.run(self.akatosh(till))
