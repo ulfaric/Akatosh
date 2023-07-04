@@ -128,6 +128,8 @@ class Resource:
                         )
                     else:
                         self.user_records[index] = (user, record[1] - amount)
+                        if self.user_records[index][1] == 0:
+                            self.user_records.pop(index)
                         self._amount += amount
                         self.usage_records.append((Mundus.now, self.amount))
                         logger.debug(

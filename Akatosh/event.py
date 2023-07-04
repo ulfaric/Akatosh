@@ -150,12 +150,12 @@ class Event:
         return self._priority
 
     @property
-    def state(self) -> int:
+    def state(self) -> str:
         """Return the state of the event."""
         return self._state
 
     @state.setter
-    def state(self, state: int):
+    def state(self, state: str):
         """Set the state of the event."""
         self._state = state
 

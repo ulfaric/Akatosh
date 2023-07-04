@@ -1,10 +1,14 @@
 from dataclasses import dataclass
+from http.client import CREATED
+from multiprocessing.pool import TERMINATE
 from tkinter.messagebox import CANCEL
 
 
 @dataclass
 class State:
-    ENDED = -1
-    ACTIVE = 0
-    INACTIVE = 1
-    CANCELED = 2
+    ENDED = "ENDED"
+    ACTIVE = "ACTIVE"
+    INACTIVE = "INACTIVE"
+    CANCELED = "CANCELED"
+    CREATED = "CREATED"
+    TERMINATED = "TERMINATED"
