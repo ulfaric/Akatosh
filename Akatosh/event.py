@@ -241,13 +241,13 @@ class ContinousEvent(Event):
         """Continous event is an event that happens at a specific time and happens multiple times for a specific duration.
 
         Args:
-            at (int | float | Callable[..., Any]): When the event happens.
-            interval (int | float | Callable[..., Any]): The interval between each action repeat.
-            duration (int | float | Callable[..., Any]): The duration of the event.
-            precursor (Event | List[Event] | None, optional): The precursor events, can be both instant events or continous events. Defaults to None.
-            action (Callable[..., Any] | None, optional): The actual action of the event. Defaults to None.
-            priority (int | float | Callable[..., Any], optional): The priority of the event. Defaults to 0.
-            label (str | None, optional): Short description of the event.. Defaults to None.
+            at (int | float | Callable[..., Any]): when the event happens.
+            interval (int | float | Callable[..., Any]): the interval between each action repeat.
+            duration (int | float | Callable[..., Any]): the duration of the event.
+            precursor (Event | List[Event] | None, optional): the precursor events, can be both instant events or continous events. Defaults to None.
+            action (Callable[..., Any] | None, optional): the actual action of the event. Defaults to None.
+            priority (int | float | Callable[..., Any], optional): the priority of the event. Defaults to 0.
+            label (str | None, optional): short description of the event.. Defaults to None.
         """
         super().__init__(
             at=at,
