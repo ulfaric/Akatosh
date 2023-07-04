@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Callable, List, Tuple
 
 from .logger import logger
-from .universe import mundus
+from .universe import Mundus
 
 
 class Resource:
@@ -39,14 +39,14 @@ class Resource:
             raise ValueError(f"Not enough amount in Resource {self.label}.")
         else:
             self._amount -= amount
-            self.usage_records.append((mundus.now, self.amount))
+            self.usage_records.append((Mundus.now, self.amount))
 
     def put(self, amount: int | float) -> None:
         if amount > self.occupied:
             raise ValueError(f"Not enough capacity in Resource {self.label}.")
         else:
             self._amount += amount
-            self.usage_records.append((mundus.now, self.amount))
+            self.usage_records.append((Mundus.now, self.amount))
 
     def distribute(self, user: object, amount: int | float) -> None:
         if amount > self.amount:
@@ -60,7 +60,7 @@ class Resource:
                         break
             else:
                 self.records.append((user, amount))
-            self.usage_records.append((mundus.now, self.amount))
+            self.usage_records.append((Mundus.now, self.amount))
             logger.debug(f"Resource {self.label} distributed {amount} to {user}.")
 
     def collect(self, user: object, amount: int | float | None = None) -> None:
@@ -70,7 +70,7 @@ class Resource:
             for index, record in enumerate(self.records):
                 if record[0] is user:
                     self._amount += record[1]
-                    self.usage_records.append((mundus.now, self.amount))
+                    self.usage_records.append((Mundus.now, self.amount))
                     logger.debug(
                         f"Resource {self.label} collected {amount} from {user}."
                     )
@@ -85,7 +85,7 @@ class Resource:
                     else:
                         self.records[index] = (user, record[1] - amount)
                         self._amount += amount
-                        self.usage_records.append((mundus.now, self.amount))
+                        self.usage_records.append((Mundus.now, self.amount))
                         logger.debug(
                             f"Resource {self.label} collected {amount} from {user}."
                         )
@@ -94,9 +94,9 @@ class Resource:
     def usage(self, duration: int | float | Callable | None = None):
         if duration:
             if callable(duration):
-                after = mundus.now - duration()
+                after = Mundus.now - duration()
             else:
-                after = mundus.now - duration
+                after = Mundus.now - duration
             if after < 0:
                 after = 0
             usage_records = [
@@ -116,7 +116,7 @@ class Resource:
                             weighted_overall_amount += record[1] * (record[0] - after)
                         elif index == len(usage_records) - 1:
                             weighted_overall_amount += record[1] * (
-                                mundus.now - usage_records[index - 1][0]
+                                Mundus.now - usage_records[index - 1][0]
                             )
                         else:
                             weighted_overall_amount += record[1] * (

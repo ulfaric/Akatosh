@@ -1,15 +1,17 @@
 import logging
 
-from Akatosh import event, mundus
+from Akatosh import event, Mundus
 
 
 @event(at=5)
 def hellow_world_again():
-    print(f"{mundus.now}:\tHello World! Again!")
-    
+    print(f"{Mundus.now}:\tHello World! Again!")
+
+
 @event(at=1)
 def hellow_world():
-    print(f"{mundus.now}:\tHello World!")
+    print(f"{Mundus.now}:\tHello World!")
 
-mundus.set_logger(logging.DEBUG)
-mundus.simulate(6)
+
+Mundus.set_logger(logging.DEBUG)
+Mundus.simulate(6)
