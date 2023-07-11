@@ -1,150 +1,82 @@
-from __future__ import annotations
+from ctypes import Union
+from math import inf
+from typing import List, Union
+from uuid import uuid4
 
-import asyncio
-import logging
-from math import log
-from typing import TYPE_CHECKING, List
-
-from .logger import logger
-from .states import State
-
-if TYPE_CHECKING:
-    from .event import Event
+from .timeline import Timeline
 
 
 class Universe:
-    def __init__(self) -> None:
-        """The Simulation Universe."""
-        self._resolution = (
-            1  # the resolution of the time. 1 means minimum time unit is 0.1 second.
-        )
-        self._now: int | float = 0  # the current time of the simulated universe.
-        self._future_events: List[Event] = list()  # the future events queue.
-        self._current_events: List[Event] = list()  # the current events queue.
-        self._past_events: List[Event] = list()  # the past events queue.
-        self._alduin: bool = False  # trigger to stop the simulation.
-        self.set_logger(logging.ERROR)  # set the default logger level to ERROR.
+    _id: int
+    _timeline: Timeline
+    _accuracy: int
+    _till: Union[int, float]
 
-    async def akatosh(self, till: int | float | None = None):
-        """Akatosh is the god of time in the Elder Scrolls universe. This method is the core of the simulation.
+    def __new__(cls):
+        if not hasattr(cls, "instance"):
+            cls.instance = super(Universe, cls).__new__(cls)
+        return cls.instance
 
-        Args:
-            till (int | float | None, optional): the end time of the simulated universe. Defaults to None.
+    def __init__(self, accuracy:int=3) -> None:
+        """The universe in which the simulation takes place. Should not be instantiated directly."""
+        self._id = uuid4().int
+        self._timeline = Timeline()
+        self._till = int()
+        self._accuracy = accuracy
+        self._early_stop = False
 
-        Raises:
-            RuntimeError: raise if the event is in unknown state or being placed in wrong event queue.
-        """
-        while len(self.future_events) != 0:
-            if self.alduin:
-                return
-
-            if self.now < min(event.at for event in self.future_events):
-                active_event = [
-                    event for event in self.future_events if event.state == State.ACTIVE
-                ]
-                if len(active_event) == 0:
-                    return
+    def simulate(self, till: Union[int, float] = inf) -> None:
+        """Simulate the universe to a given time."""
+        self._till = till
+        while True:
+            
+            if self.early_stop:
+                break
+            
+            if len(self.timeline.events) != 0:
+                next_event = self.timeline.events.pop(0)
+                if self.now < next_event.at:
+                    self.timeline._time = next_event.at
+                if next_event.at <= self.till:
+                    try:
+                        next(next_event.actor.perform())
+                    except StopIteration:
+                        pass
                 else:
-                    self._now = min(event.at for event in active_event)
-                if till is not None:
-                    if self.now > till:
-                        return
-            logger.debug(f"Time: {self.now}")
-
-            logger.debug(
-                f"Future events: {[(event.at, event.label) for event in self.future_events]}"
-            )
-
-            for event in self.future_events[:]:
-                if event.at == self.now:
-                    if event.state == State.ACTIVE or event.state == State.INACTIVE:
-                        logger.debug(f"Event {event.label} is triggered.")
-                        self.future_events.remove(event)
-                        self.current_events.append(event)
-                    elif event.state == State.CANCELED:
-                        logger.debug(f"Event {event.label} is canceled.")
-                        self.future_events.remove(event)
-                        self.past_events.append(event)
-                        event.state = State.ENDED
-                    elif event.state == State.ENDED:
-                        raise RuntimeError(
-                            f"Event {event.label} is ended but inside future events queue."
-                        )
-                    else:
-                        raise RuntimeError(f"Event {event.label} is in unknown state.")
-
-            logger.debug(
-                f"Current events: {[event.label for event in self.current_events]}"
-            )
-
-            while (
-                len(
-                    [
-                        event
-                        for event in self.current_events
-                        if event.state == State.ACTIVE
-                    ]
-                )
-                != 0
-            ):
-                priority = min(
-                    event.priority
-                    for event in self.current_events
-                    if event.state == State.ACTIVE
-                )
-                logger.debug(
-                    f"Current Priority: {priority}, {[(event.label, event.priority) for event in self.current_events]}"
-                )
-                await asyncio.gather(
-                    *[
-                        event._perform()
-                        for event in self.current_events
-                        if event.priority == priority
-                    ]
-                )
-
-    def simulate(self, till: int | float | None = None):
-        """Start the simulation."""
-        asyncio.run(self.akatosh(till))
-
-    def set_logger(self, level: int):
-        """Set the logger level."""
-        logger.setLevel(level)
+                    break
+            else:
+                break
+            
+    def stop(self) -> None:
+        """Can be called during event to stop the simulation."""
+        self._early_stop = True
+        
+    @property
+    def timeline(self) -> Timeline:
+        """The timeline of the universe."""
+        return self._timeline
 
     @property
-    def resolution(self) -> int:
-        """Return  the resolution of the time."""
-        return self._resolution
+    def till(self) -> Union[int, float]:
+        """The time to which the universe is simulated."""
+        return self._till
 
     @property
-    def now(self) -> int | float:
-        """Return the current time of the simulated universe."""
-        return self._now
+    def now(self) -> Union[int, float]:
+        """The current time of the universe."""
+        return self.timeline.now
+    
+    @property
+    def accuracy(self) -> int:
+        """The accuracy of the universe in term of minimum time step. e.g., 3 means 0.001s."""
+        return self._accuracy
+
+    @accuracy.setter
+    def accuracy(self, value: int) -> None:
+        self._accuracy = value
 
     @property
-    def future_events(self) -> List[Event]:
-        """Return the future events queue."""
-        return self._future_events
-
-    @property
-    def current_events(self) -> List[Event]:
-        """Return the current events queue."""
-        return self._current_events
-
-    @property
-    def past_events(self) -> List[Event]:
-        """Return the past events queue."""
-        return self._past_events
-
-    @property
-    def alduin(self) -> bool:
-        """Return the trigger to stop the simulation."""
-        return self._alduin
-
-    @alduin.setter
-    def alduin(self, value: bool):
-        """Set the trigger to stop the simulation."""
-        self._alduin = value
-
-
+    def early_stop(self) -> bool:
+        return self._early_stop
+    
 Mundus = Universe()
