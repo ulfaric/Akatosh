@@ -3,7 +3,6 @@ site_name: Akatosh
 nav:
   - overview: index.md
   - Examples:
-      - examples/index.md
       - Instant Event: examples/instant_event.md
       - Continuous Event: examples/continuous_event.md
       - Event Priority: examples/event_priority.md
@@ -12,7 +11,14 @@ nav:
       - Create Event within Event: examples/create_event_within_event.md
       - Event After Another Event: examples/event_wait_event.md
       - Resource: examples/resource.md
-  #- API Reference
+      - Entity: examples/entity.md
+  - API Reference:
+      - Universe: api/universe.md
+      - Event:  api/event.md
+      - InstantEvent: api/instant_event.md
+      - ContinuousEvent: api/continuous_event.md
+      - Resource: api/resource.md
+      - Entity: api/entity.md
 
 
 theme:

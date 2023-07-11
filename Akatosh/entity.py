@@ -17,6 +17,13 @@ class Entity:
         create_at: int | float | Callable | None = None,
         terminate_at: int | float | Callable | None = None,
     ) -> None:
+        """Create a entity.
+
+        Args:
+            label (str | None, optional): short description of the entity. Defaults to None.
+            create_at (int | float | Callable | None, optional): when the life cycle of this entity should start. Defaults to None, then must call create() method manually.
+            terminate_at (int | float | Callable | None, optional): when the life cycle of this entity should end. Defaults to None, then must call terminate() method manually.
+        """
         self._id = uuid4().int
         self._label = label
         self._state: List[str] = list()
@@ -37,6 +44,7 @@ class Entity:
                 self.terminate(at=round(terminate_at, Mundus.resolution))
 
     def create(self, at: int | float) -> None:
+        """The creation of the entity."""
         def _create():
             if self.terminated:
                 raise RuntimeError(f"Entity {self.label} is already terminated.")
@@ -50,9 +58,11 @@ class Entity:
 
     @abstractmethod
     def on_creation(self):
+        """Callback function upon creation of the entity"""
         pass
 
     def terminate(self, at: int | float) -> None:
+        """The termination of the entity."""
         def _terminate():
             if not self.created:
                 raise RuntimeError(f"Entity {self.label} is not created yet.")
@@ -67,11 +77,13 @@ class Entity:
 
     @abstractmethod
     def on_termination(self):
+        """Callback function upon termination of the entity"""
         pass
 
     def get(
         self, resource: Resource, amount: int | float | Callable | None = None
     ) -> None:
+        """Consume certain amout from a resource. if no amount is specified, consume all."""
         if amount:
             if callable(amount):
                 resource.distribute(self, amount())
@@ -85,6 +97,7 @@ class Entity:
     def put(
         self, resource: Resource, amount: int | float | Callable | None = None
     ) -> None:
+        """Return certain amout to a resource. if no amount is specified, return all."""
         if amount:
             if callable(amount):
                 resource.collect(self, amount())
@@ -98,25 +111,31 @@ class Entity:
             resource.put(resource.amount)
 
     def release_resources(self):
+        """Release all occupied resources."""
         for res in self.ocupied_resources:
             res.collect(self)
 
     @property
     def label(self):
+        """Return the label of the entity."""
         return self._label
 
     @property
     def state(self):
+        """Return the state(s) of the entity."""
         return self._state
 
     @property
     def created(self):
+        """Return True if the entity is created."""
         return State.CREATED in self.state
 
     @property
     def terminated(self):
+        """Return True if the entity is terminated."""
         return State.TERMINATED in self.state
 
     @property
     def ocupied_resources(self):
+        """Return the resources occupied by the entity."""
         return self._occupied_resources

@@ -5,6 +5,8 @@ from abc import abstractmethod
 from typing import Any, Callable, List
 from uuid import uuid4
 
+from Akatosh.event import Event
+
 from .logger import logger
 from .states import State
 from .universe import Mundus
@@ -182,6 +184,26 @@ class Event:
 
 class InstantEvent(Event):
     """Instant event is an event that happens at a specific time and only happens once."""
+
+    def __init__(
+        self,
+        at: int | float | Callable[..., Any],
+        precursor: Event | List[Event] | None = None,
+        action: Callable[..., Any] | None = None,
+        priority: int | float | Callable[..., Any] = 0,
+        label: str | None = None,
+        **kwargs,
+    ) -> None:
+        """Create a instant event.
+
+        Args:
+            at (int | float | Callable): the time when the event happens.
+            precursor (Event | List[Event] | None, optional): the precursor events. Defaults to None.
+            action (Callable | None, optional): the actual action of the event, must be defined. Defaults to None.
+            priority (int | float | Callable, optional): the priority of the event. When multiple event happen at the same time, the event with lower priority value will happen first. Defaults to 0.
+            label (str | None, optional): Short descirption of the event. Defaults to None.
+        """
+        super().__init__(at, precursor, action, priority, label, **kwargs)
 
     async def _perform(self):
         """Perform the action of the event."""
