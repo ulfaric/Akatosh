@@ -297,6 +297,7 @@ class ContinuousEvent(Event):
                 logger.debug(f"Event {self.label} next step is at {self.at}.")
                 Mundus.future_events.append(self)
             else:
+                self.end()
                 logger.debug(f"Event {self.label} is ended.")
             Mundus.current_events.remove(self)
             Mundus.past_events.append(self)
