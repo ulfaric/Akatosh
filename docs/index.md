@@ -17,7 +17,7 @@ To use `Akatosh`:
 pip install -U Akatosh
 ```
 
-A basic example is showing below, for more information please look at *Examples* and *API Reference*, full documentation is available at https://ulfaric.github.io/Akatosh/.
+A basic example is showing below, for more information please look at *Examples* and *API Reference*
 
 ```py
 import logging
