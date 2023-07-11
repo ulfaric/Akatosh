@@ -5,8 +5,6 @@ from abc import abstractmethod
 from typing import Any, Callable, List
 from uuid import uuid4
 
-from Akatosh.event import Event
-
 from .logger import logger
 from .states import State
 from .universe import Mundus
