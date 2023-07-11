@@ -1,11 +1,7 @@
-from dataclasses import dataclass
-from http.client import CREATED
-from multiprocessing.pool import TERMINATE
-from tkinter.messagebox import CANCEL
+import enum
 
 
-@dataclass
-class State:
+class State(str, enum.Enum):
     ENDED = "ENDED"
     ACTIVE = "ACTIVE"
     INACTIVE = "INACTIVE"

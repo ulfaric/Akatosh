@@ -226,7 +226,7 @@ def event(
     return _event
 
 
-class ContinousEvent(Event):
+class ContinuousEvent(Event):
     def __init__(
         self,
         at: int | float | Callable[..., Any],

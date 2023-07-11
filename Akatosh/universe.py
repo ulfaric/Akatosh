@@ -39,18 +39,20 @@ class Universe:
                 return
 
             if self.now < min(event.at for event in self.future_events):
-                self._now = min(
-                    event.at
-                    for event in self.future_events
-                    if event.state == State.ACTIVE
-                )
-                if till:
+                active_event = [
+                    event for event in self.future_events if event.state == State.ACTIVE
+                ]
+                if len(active_event) == 0:
+                    return
+                else:
+                    self._now = min(event.at for event in active_event)
+                if till is not None:
                     if self.now > till:
                         return
             logger.debug(f"Time: {self.now}")
 
             logger.debug(
-                f"Future events: {[event.label for event in self.future_events]}"
+                f"Future events: {[(event.at, event.label) for event in self.future_events]}"
             )
 
             for event in self.future_events[:]:
@@ -91,7 +93,7 @@ class Universe:
                     if event.state == State.ACTIVE
                 )
                 logger.debug(
-                    f"Priority: {priority}, {[(event.label, event.priority) for event in self.current_events]}"
+                    f"Current Priority: {priority}, {[(event.label, event.priority) for event in self.current_events]}"
                 )
                 await asyncio.gather(
                     *[

@@ -41,8 +41,8 @@ class Resource:
         else:
             self._amount = self.capacity
         self._label = label
-        self._user_records: List[Tuple[object, int | float]] = list()
-        self._usage_records: List[Tuple[int | float, int | float]] = list()
+        self._user_records: List[Tuple[object, int | float]] = list() # (user, amount) tracking the usage of individual user
+        self._usage_records: List[Tuple[int | float, int | float]] = list() # (time, amount) tracking the usage of the resource over time
 
     def get(self, amount: int | float) -> None:
         """Get the amount of resource from the resource.
@@ -116,7 +116,7 @@ class Resource:
                     self._amount += record[1]
                     self.usage_records.append((Mundus.now, self.amount))
                     logger.debug(
-                        f"Resource {self.label} collected {amount} from {user}."
+                        f"Resource {self.label} collected {record[1]} from {user}."
                     )
                     break
         else:
