@@ -5,7 +5,7 @@ from uuid import uuid4
 
 from Akatosh.universe import Mundus
 
-from .event import InstantEvent
+from .event import Event, InstantEvent, ContinuousEvent
 from .resource import Resource
 from .states import State
 from .logger import logger
@@ -70,6 +70,7 @@ class Entity:
                 raise RuntimeError(f"Entity {self.label} is not created yet.")
             self._state.append(State.TERMINATED)
             self.release_resources()
+            self.unregister_from_lists()
             self.on_termination()
             logger.debug(f"Entity {self.label} terminated at {Mundus.now}")
 
@@ -116,6 +117,49 @@ class Entity:
         """Release all occupied resources."""
         for res in self.ocupied_resources:
             res.collect(self)
+            
+    def unregister_from_lists(self):
+        """Remove this entity from all registered entity lists."""
+        for list in self.registered_lists[:]:
+            list.remove(self)
+            
+    def continuous_event(
+        self,
+        at: int | float | Callable,
+        interval: int | float | Callable,
+        duration: int | float | Callable,
+        precursor: Event | List[Event] | None = None,
+        priority: int | float | Callable = 0,
+        label: str | None = None,
+        **kwargs,
+    ):
+        """A decorator for creating continous event.
+
+        Args:
+            at (int | float | Callable): when the continuous event starts.
+            interval (int | float | Callable): how frequent the event happens.
+            duration (int | float | Callable): the duration of the event.
+            precursor (Event | List[Event] | None, optional): the precursors for this event. Defaults to None.
+            priority (int | float | Callable, optional): the priority for this event. Defaults to 0.
+            label (str | None, optional): short description of the event. Defaults to None.
+        """
+
+        def _continous_event(func: Callable):
+            return ContinuousEvent(
+                at=at,
+                interval=interval,
+                duration=duration,
+                precursor=precursor,
+                action=func,
+                priority=priority,
+                label=label,
+                **kwargs,
+            )
+        
+        if self.terminated:
+            raise RuntimeError(f"Entity {self.label} is already terminated.")
+
+        return _continous_event
 
     @property
     def label(self):
