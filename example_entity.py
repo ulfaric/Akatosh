@@ -1,7 +1,7 @@
 from cgi import test
 import logging
 
-from Akatosh import Entity, Mundus, Resource, event
+from Akatosh import Entity, Mundus, Resource, instant_event
 
 
 class TestEntity(Entity):
@@ -16,7 +16,8 @@ test_entity = TestEntity(label="Test Entity", create_at=0, terminate_at=10)
 
 test_resource = Resource(label="Test Resource", capacity=1)
 
-@event(at=2, label="Test Event Get Resource")
+
+@instant_event(at=2, label="Test Event Get Resource")
 def test_event():
     test_entity.get(test_resource, 1)
 

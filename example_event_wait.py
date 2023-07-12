@@ -1,7 +1,7 @@
 import asyncio
 import logging
 
-from Akatosh import event, Mundus, InstantEvent
+from Akatosh import instant_event, Mundus, InstantEvent
 
 
 def hellow_world():
@@ -11,7 +11,7 @@ def hellow_world():
 e = InstantEvent(at=5, action=hellow_world, label="Hello World")
 
 
-@event(at=0, precursor=e, label="Hello World Again")
+@instant_event(at=0, precursor=e, label="Hello World Again")
 def hellow_world_again():
     print(f"{Mundus.now}:\tHello World! Again!")
 

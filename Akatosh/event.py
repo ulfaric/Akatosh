@@ -217,7 +217,7 @@ class InstantEvent(Event):
             logger.debug(f"Event {self.label} is ended.")
 
 
-def event(
+def instant_event(
     at: int | float | Callable,
     precursor: Event | List[Event] | None = None,
     priority: int | float | Callable = 0,
@@ -233,7 +233,7 @@ def event(
         label (str | None, optional): Short description of the event. Defaults to None.
     """
 
-    def _event(func: Callable):
+    def _instant_event(func: Callable):
         return InstantEvent(
             at=at,
             precursor=precursor,
@@ -243,7 +243,7 @@ def event(
             **kwargs,
         )
 
-    return _event
+    return _instant_event
 
 
 class ContinuousEvent(Event):
@@ -277,7 +277,7 @@ class ContinuousEvent(Event):
             label=label,
             **kwargs,
         )
-        
+
         self._interval = interval
         if callable(duration):
             self._duration = round(duration(), Mundus.resolution)
@@ -322,3 +322,38 @@ class ContinuousEvent(Event):
     def sub_events(self) -> List[InstantEvent]:
         """Return the sub events of the continous event."""
         return self._sub_events
+
+
+def continuous_event(
+    at: int | float | Callable,
+    interval: int | float | Callable,
+    duration: int | float | Callable,
+    precursor: Event | List[Event] | None = None,
+    priority: int | float | Callable = 0,
+    label: str | None = None,
+    **kwargs,
+):
+    """A decorator for creating continous event.
+
+    Args:
+        at (int | float | Callable): when the continuous event starts.
+        interval (int | float | Callable): how frequent the event happens.
+        duration (int | float | Callable): the duration of the event.
+        precursor (Event | List[Event] | None, optional): the precursors for this event. Defaults to None.
+        priority (int | float | Callable, optional): the priority for this event. Defaults to 0.
+        label (str | None, optional): short description of the event. Defaults to None.
+    """
+
+    def _continous_event(func: Callable):
+        return ContinuousEvent(
+            at=at,
+            interval=interval,
+            duration=duration,
+            precursor=precursor,
+            action=func,
+            priority=priority,
+            label=label,
+            **kwargs,
+        )
+
+    return _continous_event

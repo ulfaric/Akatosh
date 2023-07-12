@@ -1,6 +1,6 @@
 import logging
 
-from Akatosh import InstantEvent, event, Mundus
+from Akatosh import InstantEvent, instant_event, Mundus
 
 
 def hellow_world():
@@ -16,7 +16,7 @@ later_event = InstantEvent(at=5, action=hellow_world)
 #     later_event.activate()
 
 
-@event(at=0, label="pause")
+@instant_event(at=0, label="pause")
 def pause():
     print(f"{Mundus.now}:\tPause the future event.")
     later_event.deactivate()
