@@ -1,4 +1,4 @@
-
+```py
 import logging
 from Akatosh import Entity, EntityList, Mundus
 
@@ -23,3 +23,4 @@ Mundus.set_logger(logging.DEBUG)
 
 # run the simulation
 Mundus.simulate()
+```

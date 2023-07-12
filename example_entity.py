@@ -1,4 +1,3 @@
-from cgi import test
 import logging
 
 from Akatosh import Entity, Mundus, Resource, instant_event

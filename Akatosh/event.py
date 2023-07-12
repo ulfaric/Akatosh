@@ -58,7 +58,12 @@ class Event:
         # assign label
         self._label = label
         # add to the universe
-        Mundus.future_events.append(self)
+        if Mundus.now<self.at:
+            Mundus.future_events.append(self)
+        elif Mundus.now>self.at:
+            raise RuntimeError(f"Event {self.label} tries to later the past.")
+        else:
+            Mundus.current_events.append(self)
 
     def end(self):
         """End the event and activate the follower events if there is any."""
@@ -104,7 +109,13 @@ class Event:
         if self.ended:
             raise RuntimeError(f"Event {self.label} has already ended.")
         self.state = State.CANCELED
-
+        if self in Mundus.future_events:
+            Mundus.future_events.remove(self)
+        if self in Mundus.current_events:
+            Mundus.current_events.remove(self)
+        Mundus.past_events.append(self)
+        logger.debug(f"Event {self.label} is cancelled.")
+        
     @abstractmethod
     async def _perform(self):
         """Abstract method for the event to perform its action."""

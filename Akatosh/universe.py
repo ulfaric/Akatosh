@@ -18,7 +18,7 @@ class Universe:
         self._resolution = (
             1  # the resolution of the time. 1 means minimum time unit is 0.1 second.
         )
-        self._now: int | float = 0  # the current time of the simulated universe.
+        self._now: int | float = -1  # the current time of the simulated universe.
         self._future_events: List[Event] = list()  # the future events queue.
         self._current_events: List[Event] = list()  # the current events queue.
         self._past_events: List[Event] = list()  # the past events queue.
@@ -38,34 +38,31 @@ class Universe:
             if self.alduin:
                 return
 
-            if self.now < min(event.at for event in self.future_events):
-                active_event = [
-                    event for event in self.future_events if event.state == State.ACTIVE
-                ]
-                if len(active_event) == 0:
-                    return
-                else:
-                    self._now = min(event.at for event in active_event)
+            active_future_event = [
+                event for event in self.future_events if event.state == State.ACTIVE
+            ]
+            if len(active_future_event) == 0:
+                return
+            _time = min(event.at for event in active_future_event)
+            if self.now < _time:
+                self._now = _time
                 if till is not None:
                     if self.now > till:
                         return
             logger.debug(f"Time: {self.now}")
 
             logger.debug(
-                f"Future events: {[(event.at, event.label) for event in self.future_events]}"
+                f"Future active events: {[(event.at, event.label) for event in self.future_events]}"
             )
 
             for event in self.future_events[:]:
-                if event.at == self.now:
+                if event.at <= self.now:
                     if event.state == State.ACTIVE or event.state == State.INACTIVE:
                         logger.debug(f"Event {event.label} is triggered.")
                         self.future_events.remove(event)
                         self.current_events.append(event)
                     elif event.state == State.CANCELED:
-                        logger.debug(f"Event {event.label} is canceled.")
-                        self.future_events.remove(event)
-                        self.past_events.append(event)
-                        event.state = State.ENDED
+                        raise RuntimeError(f"Event {event.label} is canceled but inside future events queue.")
                     elif event.state == State.ENDED:
                         raise RuntimeError(
                             f"Event {event.label} is ended but inside future events queue."
@@ -74,7 +71,7 @@ class Universe:
                         raise RuntimeError(f"Event {event.label} is in unknown state.")
 
             logger.debug(
-                f"Current events: {[event.label for event in self.current_events]}"
+                f"Current events: {[(event.priority, event.label) for event in self.current_events]}"
             )
 
             while (
@@ -93,7 +90,7 @@ class Universe:
                     if event.state == State.ACTIVE
                 )
                 logger.debug(
-                    f"Current Priority: {priority}, {[(event.label, event.priority) for event in self.current_events]}"
+                    f"Current Priority: {priority}, Executing events: {[event.label for event in self.current_events if event.priority == priority]}"
                 )
                 await asyncio.gather(
                     *[
