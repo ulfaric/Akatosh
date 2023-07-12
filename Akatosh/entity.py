@@ -1,5 +1,6 @@
 from abc import abstractmethod
-from typing import Callable, List
+from collections.abc import Iterable
+from typing import Callable, List, Iterable
 from uuid import uuid4
 
 from Akatosh.universe import Mundus
@@ -28,6 +29,7 @@ class Entity:
         self._label = label
         self._state: List[str] = list()
         self._occupied_resources: List[Resource] = list()
+        self._registered_lists: List[EntityList] = list()
         self._creation: InstantEvent = None  # type: ignore
         self._termination: InstantEvent = None  # type: ignore
 
@@ -139,3 +141,78 @@ class Entity:
     def ocupied_resources(self):
         """Return the resources occupied by the entity."""
         return self._occupied_resources
+    
+    @property
+    def registered_lists(self):
+        """Return the entity lists contains the entity."""
+        return self._registered_lists
+
+
+class EntityList(list):
+    """Customized list for entities."""
+    
+    def __init__(self, iterable:Iterable[Entity]):
+        """Create a list for entities.
+
+        Args:
+            iterable (Iterable[Entity]): Iterable of entities.
+        """
+        super().__init__(item for item in iterable if isinstance(item, Entity))
+        
+    def insert(self, __index: int, __object: Entity) -> None:
+        """Insert an entity to the list.
+
+        Args:
+            __index (SupportsIndex): the index to insert the entity.
+            __object (Entity): the entity to be inserted.
+        """
+        super().insert(__index, __object)
+        __object.registered_lists.append(self)
+        
+    def append(self, __object: Entity) -> None:
+        """Append an entity to the list.
+
+        Args:
+            __object (Entity): the entity to be appended.
+        """
+        super().append(__object)
+        __object.registered_lists.append(self)
+        
+    def remove(self, __object: Entity) -> None:
+        """Remove an entity from the list.
+
+        Args:
+            __object (Entity): the entity to be removed.
+        """
+        super().remove(__object)
+        __object.registered_lists.remove(self)
+        
+    def pop(self, __index: int = ...) -> Entity:
+        """Pop an entity from the list.
+
+        Args:
+            __index (int, optional): the index. Defaults to ... (the last one).
+
+        Returns:
+            Entity: return the poped entity.
+        """
+        __object:Entity = super().pop(__index)
+        __object.registered_lists.remove(self)
+        return __object
+    
+    def clear(self) -> None:
+        """Clear the list.
+        """
+        for item in self:
+            item.registered_lists.remove(self)
+        super().clear()
+        
+    def extend(self, __iterable: Iterable[Entity]) -> None:
+        """Extend the list with an iterable of entities.
+
+        Args:
+            __iterable (Iterable[Entity]): the iterable of entities.
+        """
+        super().extend(__iterable)
+        for item in __iterable:
+            item.registered_lists.append(self)

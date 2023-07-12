@@ -277,6 +277,7 @@ class ContinuousEvent(Event):
             label=label,
             **kwargs,
         )
+        
         self._interval = interval
         if callable(duration):
             self._duration = round(duration(), Mundus.resolution)
