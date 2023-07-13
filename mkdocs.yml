@@ -20,6 +20,7 @@ nav:
       - ContinuousEvent: api/continuous_event.md
       - Resource: api/resource.md
       - Entity: api/entity.md
+      - EntityList: api/entity_list.md
 
 
 theme:

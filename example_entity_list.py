@@ -6,7 +6,7 @@ from Akatosh import Entity, EntityList, Mundus
 elist = EntityList([])
 
 # create an test entity
-test_entity = Entity(label="test_entity", create_at=0, terminate_at=3)
+test_entity = Entity(label="test_entity", create_at=0, terminate_at=4)
 
 # test entity engage an instant event that append itself to the entity list
 @test_entity.instant_event(at=2, label="Append Entity List")

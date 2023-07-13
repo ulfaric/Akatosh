@@ -126,7 +126,7 @@ class Entity:
         """Remove this entity from all registered entity lists."""
         for list in self.registered_lists[:]:
             list.remove(self)
-            
+
     def cancel_unfinished_events(self):
         """Cancel all unfinished events."""
         for event in self.events:
@@ -264,7 +264,7 @@ class Entity:
 
 
 class EntityList(list):
-    """Customized list for entities."""
+    """Customized list for entities. This list ensures all items are entities and unique. When an entity is terminated, it will be removed from all entity lists automatically."""
 
     def __init__(self, iterable: Iterable[Entity] = [], label: str | None = None):
         """Create a list for entities, with optional label.
@@ -282,11 +282,13 @@ class EntityList(list):
             __index (SupportsIndex): the index to insert the entity.
             __object (Entity): the entity to be inserted.
         """
-        super().insert(__index, __object)
-        __object.registered_lists.append(self)
-        logger.debug(
-            f"Entity {__object.label} is inserted to {self.label if self.label else self} at {__index}."
-        )
+        if __object not in self:
+            super().insert(__index, __object)
+            if self not in __object.registered_lists:
+                __object.registered_lists.append(self)
+            logger.debug(
+                f"Entity {__object.label} is inserted to {self.label if self.label else self} at {__index}."
+            )
 
     def append(self, __object: Entity) -> None:
         """Append an entity to the list.
@@ -294,11 +296,13 @@ class EntityList(list):
         Args:
             __object (Entity): the entity to be appended.
         """
-        super().append(__object)
-        __object.registered_lists.append(self)
-        logger.debug(
-            f"Entity {__object.label} is appended to {self.label if self.label else self}."
-        )
+        if __object not in self:
+            super().append(__object)
+            if self not in __object.registered_lists:
+                __object.registered_lists.append(self)
+            logger.debug(
+                f"Entity {__object.label} is appended to {self.label if self.label else self}."
+            )
 
     def remove(self, __object: Entity) -> None:
         """Remove an entity from the list.
@@ -341,9 +345,12 @@ class EntityList(list):
         Args:
             __iterable (Iterable[Entity]): the iterable of entities.
         """
-        super().extend(__iterable)
         for item in __iterable:
-            item.registered_lists.append(self)
+            if item not in self:
+                super().append(item)
+        for item in __iterable:
+            if self not in item.registered_lists:
+                item.registered_lists.append(self)
         logger.debug(
             f"{self.label if self.label else self} is extended with {__iterable}."
         )
