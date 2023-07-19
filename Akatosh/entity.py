@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from abc import abstractmethod
 from collections.abc import Iterable
 from typing import Callable, Iterable, List
@@ -17,6 +19,7 @@ class Entity:
         label: str | None = None,
         create_at: int | float | Callable | None = None,
         terminate_at: int | float | Callable | None = None,
+        precursor: Entity | List[Entity] | None = None,
     ) -> None:
         """Create a entity.
 
@@ -31,8 +34,11 @@ class Entity:
         self._occupied_resources: List[Resource] = list()
         self._registered_lists: List[EntityList] = list()
         self._creation: InstantEvent = None  # type: ignore
+        self._created_at: int | float = float()
         self._termination: InstantEvent = None  # type: ignore
+        self._terminated_at: int | float = float()
         self._events: List[Event] = list()
+        self._precursor = precursor
 
         if create_at is not None:
             if callable(create_at):
@@ -53,12 +59,31 @@ class Entity:
             if self.terminated:
                 raise RuntimeError(f"Entity {self.label} is already terminated.")
             self._state.append(State.CREATED)
+            self._created_at = Mundus.now
             self.on_creation()
             logger.debug(f"Entity {self.label} created at {Mundus.now}")
 
-        self._creation = InstantEvent(
-            at=at, action=_create, label=f"Creation of {self.label}", priority=-2
-        )
+        if self.precursor is None:
+            self._creation = InstantEvent(
+                at=at, action=_create, label=f"Creation of {self.label}", priority=-2
+            )
+        else:
+            if isinstance(self.precursor, list):
+                self._creation = InstantEvent(
+                    at=at,
+                    action=_create,
+                    label=f"Creation of {self.label}",
+                    priority=-2,
+                    precursor=[e._termination for e in self.precursor],
+                )
+            else:
+                self._creation = InstantEvent(
+                    at=at,
+                    action=_create,
+                    label=f"Creation of {self.label}",
+                    priority=-2,
+                    precursor=self.precursor._termination,
+                )
 
     @abstractmethod
     def on_creation(self):
@@ -72,6 +97,7 @@ class Entity:
             if not self.created:
                 raise RuntimeError(f"Entity {self.label} is not created yet.")
             self._state.append(State.TERMINATED)
+            self._terminated_at = Mundus.now
             self.release_resources()
             self.unregister_from_lists()
             self.cancel_unfinished_events()
@@ -243,9 +269,19 @@ class Entity:
         return State.CREATED in self.state
 
     @property
+    def created_at(self):
+        """Return the time when the entity is created."""
+        return self._created_at
+
+    @property
     def terminated(self):
         """Return True if the entity is terminated."""
         return State.TERMINATED in self.state
+
+    @property
+    def terminated_at(self):
+        """Return the time when the entity is terminated."""
+        return self._terminated_at
 
     @property
     def ocupied_resources(self):
@@ -261,6 +297,11 @@ class Entity:
     def events(self):
         """Return the events engaged by the entity."""
         return self._events
+
+    @property
+    def precursor(self):
+        """Return the precursor(s) of the entity."""
+        return self._precursor
 
 
 class EntityList(list):

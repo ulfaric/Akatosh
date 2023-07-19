@@ -33,70 +33,89 @@ class Universe:
             RuntimeError: raise if the event is in unknown state or being placed in wrong event queue.
         """
         while len(self.future_events) != 0:
+            
+            # stop simulation if world eater alduin is triggered.
             if self.alduin:
                 return
 
-            active_future_event = [
-                event for event in self.future_events if event.state == State.ACTIVE
+            # update the current time of the simulated universe.
+            valid_future_events = [
+                event
+                for event in self.future_events
+                if event.state == State.ACTIVE or event.state == State.INACTIVE
             ]
-            if len(active_future_event) == 0:
+            if len(valid_future_events) == 0:
                 return
-            _time = min(event.at for event in active_future_event)
+            _time = min(event.at for event in valid_future_events)
             if self.now < _time:
                 self._now = _time
-                if till is not None:
-                    if self.now > till:
-                        return
+                
+            # stop simulation if the end time is reached.
+            if till is not None:
+                if self.now > till:
+                    return
+                
             logger.debug(f"Time: {self.now}")
 
             logger.debug(
                 f"Future active events: {[(event.at, event.label) for event in self.future_events]}"
             )
 
-            for event in self.future_events[:]:
-                if event.at <= self.now:
-                    if event.state == State.ACTIVE or event.state == State.INACTIVE:
-                        logger.debug(f"Event {event.label} is triggered.")
-                        self.future_events.remove(event)
-                        self.current_events.append(event)
-                    elif event.state == State.CANCELED:
-                        raise RuntimeError(f"Event {event.label} is canceled but inside future events queue.")
-                    elif event.state == State.ENDED:
-                        raise RuntimeError(
-                            f"Event {event.label} is ended but inside future events queue."
-                        )
-                    else:
-                        raise RuntimeError(f"Event {event.label} is in unknown state.")
+            self.organise_events()
 
             logger.debug(
                 f"Current events: {[(event.priority, event.label) for event in self.current_events]}"
             )
 
-            while (
-                len(
-                    [
-                        event
-                        for event in self.current_events
-                        if event.state == State.ACTIVE
-                    ]
-                )
-                != 0
-            ):
-                priority = min(
-                    event.priority
+            await self.execute_current_events()
+            
+            
+
+    def organise_events(self):
+        """Organise the events in the future events queue. Valid event will be moved to the current events queue. Non-valid event will be moved to the past events queue.
+
+        Raises:
+            RuntimeError: raise if the event is in unknown state or being placed in wrong event queue.
+        """
+        for event in self.future_events[:]:
+            if event.at <= self.now:
+                if event.state == State.ACTIVE or event.state == State.INACTIVE:
+                    logger.debug(f"Event {event.label} is triggered.")
+                    self.future_events.remove(event)
+                    self.current_events.append(event)
+                elif event.state == State.CANCELED:
+                    raise RuntimeError(
+                            f"Event {event.label} is canceled but inside future events queue."
+                        )
+                elif event.state == State.ENDED:
+                    raise RuntimeError(
+                            f"Event {event.label} is ended but inside future events queue."
+                        )
+                else:
+                    raise RuntimeError(f"Event {event.label} is in unknown state.")
+
+    async def execute_current_events(self):
+        """Execute the current events queue based on priority. The event with the lowest priority will be executed first. The event with the same priority will be executed concurrently.
+        """
+        while (
+            len([event for event in self.current_events if event.state == State.ACTIVE])
+            != 0
+        ):
+            priority = min(
+                event.priority
+                for event in self.current_events
+                if event.state == State.ACTIVE
+            )
+            logger.debug(
+                f"Current Priority: {priority}, Executing events: {[event.label for event in self.current_events if event.priority == priority]}"
+            )
+            await asyncio.gather(
+                *[
+                    event._perform()
                     for event in self.current_events
-                    if event.state == State.ACTIVE
-                )
-                logger.debug(
-                    f"Current Priority: {priority}, Executing events: {[event.label for event in self.current_events if event.priority == priority]}"
-                )
-                await asyncio.gather(
-                    *[
-                        event._perform()
-                        for event in self.current_events
-                        if event.priority == priority
-                    ]
-                )
+                    if event.priority == priority
+                ]
+            )
 
     def simulate(self, till: int | float | None = None):
         """Start the simulation."""

@@ -1,4 +1,3 @@
-import asyncio
 import logging
 
 from Akatosh import instant_event, Mundus, InstantEvent
