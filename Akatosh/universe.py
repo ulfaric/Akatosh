@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 class Universe:
     def __init__(self) -> None:
         """The Simulation Universe."""
-        self._resolution = 1  # the resolution of the time. 1 means minimum time unit is 0.1 second.
+        self._resolution = 15  # the resolution of the time. 1 means minimum time unit is 0.1 second.
         self._now: int | float = -1  # the current time of the simulated universe.
         self._future_events: List[Event] = list()  # the future events queue.
         self._current_events: List[Event] = list()  # the current events queue.
