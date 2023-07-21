@@ -68,11 +68,17 @@ class Event:
     def end(self):
         """End the event and activate the follower events if there is any."""
         self.state = State.ENDED
+        if self in Mundus.future_events:
+            Mundus.future_events.remove(self)
+        if self in Mundus.current_events:
+            Mundus.current_events.remove(self)
+        Mundus.past_events.append(self)
         for event in self.follower:
             try:
                 event.activate()
             except RuntimeError:
                 logger.debug(f"Event {event.label} passed due time.")
+        logger.debug(f"Event {self.label} is ended.")
 
     def activate(self, force: bool = False):
         if self.ended:
@@ -101,7 +107,7 @@ class Event:
         self.state = State.INACTIVE
 
     def cancel(self):
-        """Cancel the event.
+        """Cancel the event. Will not set the follower events to active.
 
         Raises:
             RuntimeError: raise if the event has already ended.
@@ -225,7 +231,6 @@ class InstantEvent(Event):
             Mundus.current_events.remove(self)
             Mundus.past_events.append(self)
             self.end()
-            logger.debug(f"Event {self.label} is ended.")
 
 
 def instant_event(
@@ -308,11 +313,9 @@ class ContinuousEvent(Event):
             if self.at <= self.till:
                 logger.debug(f"Event {self.label} next step is at {self.at}.")
                 Mundus.future_events.append(self)
+                Mundus.current_events.remove(self)
             else:
                 self.end()
-                logger.debug(f"Event {self.label} is ended.")
-            Mundus.current_events.remove(self)
-            Mundus.past_events.append(self)
 
     @property
     def interval(self) -> int | float | Callable[..., Any]:

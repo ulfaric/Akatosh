@@ -1,5 +1,5 @@
 import random
-from Akatosh import ContinuousEvent, Mundus, continuous_event
+from Akatosh import ContinuousEvent, Mundus, continuous_event, instant_event
 import logging
 
 # define a function for first continuous event
@@ -26,10 +26,14 @@ event2 = ContinuousEvent(
     precursor=event,
 )
 
-# create a third continuous event with decorator
-@continuous_event(at=0, interval=random.random(), duration=15, label="Test3")
-def action3():
-    print(f"Hello World at {Mundus.now} from Test 3")
+@instant_event(at=3, label="End Test 1")
+def end_event():
+    event.end()
+
+# # create a third continuous event with decorator
+# @continuous_event(at=0, interval=random.random(), duration=15, label="Test3")
+# def action3():
+#     print(f"Hello World at {Mundus.now} from Test 3")
 
 # enable debug message
 Mundus.set_logger(logging.DEBUG)
