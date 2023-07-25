@@ -4,6 +4,7 @@ import inspect
 from abc import abstractmethod
 from typing import Any, Callable, List
 from uuid import uuid4
+import warnings
 
 from .logger import logger
 from .states import State
@@ -58,15 +59,18 @@ class Event:
         # assign label
         self._label = label
         # add to the universe
-        if Mundus.now<self.at:
+        if Mundus.now < self.at:
             Mundus.future_events.append(self)
-        elif Mundus.now>self.at:
+        elif Mundus.now > self.at:
             raise RuntimeError(f"Event {self.label} tries to later the past.")
         else:
             Mundus.current_events.append(self)
 
     def end(self):
         """End the event and activate the follower events if there is any."""
+        if self.ended:
+            return
+
         self.state = State.ENDED
         if self in Mundus.future_events:
             Mundus.future_events.remove(self)
@@ -81,20 +85,33 @@ class Event:
         logger.debug(f"Event {self.label} is ended.")
 
     def activate(self, force: bool = False):
+        """Activate the event."""
+        
+        # raise error if the event has already ended
         if self.ended:
             raise RuntimeError(f"Event {self.label} has already ended.")
 
+        # raise warning if the event is cancelled
+        if self.cancelled:
+            warnings.warn(f"Event {self.label} is cancelled.")
+            return
+        
+        # return if the event is already active
+        if self.active:
+            return
+
         if force:
             self.state = State.ACTIVE
+            self._at = Mundus.now
             logger.debug(f"Event {self.label} is set to active.")
         else:
             if all(e.state == State.ENDED for e in self.precursor):
                 self.state = State.ACTIVE
+                self._at = Mundus.now
                 logger.debug(f"Event {self.label} is set to active.")
             else:
-                raise RuntimeError(
-                    f"Event {self.label} is waiting for other events to end."
-                )
+                warnings.warn(f"Event {self.label} is waiting for other events to end.")
+                return
 
     def deactivate(self):
         """Deactivate the event.
@@ -102,8 +119,20 @@ class Event:
         Raises:
             RuntimeError: raise if the event has already ended.
         """
+        
+        # raise error if the event has already ended
         if self.ended:
             raise RuntimeError(f"Event {self.label} has already ended.")
+        
+        # raise warning if the event is cancelled
+        if self.cancelled:
+            warnings.warn(f"Event {self.label} is cancelled.")
+            return
+
+        # return if the event is already inactive
+        if self.inactive:
+            return
+
         self.state = State.INACTIVE
 
     def cancel(self):
@@ -112,8 +141,15 @@ class Event:
         Raises:
             RuntimeError: raise if the event has already ended.
         """
+        
+        # raise error if the event has already ended
         if self.ended:
             raise RuntimeError(f"Event {self.label} has already ended.")
+
+        # return if the event is already cancelled
+        if self.cancelled:
+            return
+
         self.state = State.CANCELED
         if self in Mundus.future_events:
             Mundus.future_events.remove(self)
@@ -121,7 +157,7 @@ class Event:
             Mundus.current_events.remove(self)
         Mundus.past_events.append(self)
         logger.debug(f"Event {self.label} is cancelled.")
-        
+
     @abstractmethod
     async def _perform(self):
         """Abstract method for the event to perform its action."""
@@ -316,6 +352,13 @@ class ContinuousEvent(Event):
                 Mundus.current_events.remove(self)
             else:
                 self.end()
+                
+    def activate(self, force: bool = False):
+        
+        if Mundus.now > self.till:
+            warnings.warn(f"Event {self.label} has passed due time.")
+        else:
+            super().activate(force)
 
     @property
     def interval(self) -> int | float | Callable[..., Any]:

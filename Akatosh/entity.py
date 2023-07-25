@@ -58,6 +58,8 @@ class Entity:
         def _create():
             if self.terminated:
                 raise RuntimeError(f"Entity {self.label} is already terminated.")
+            if self.created:
+                return
             self._state.append(State.CREATED)
             self._created_at = Mundus.now
             self.on_creation()
@@ -96,6 +98,8 @@ class Entity:
         def _terminate():
             if not self.created:
                 raise RuntimeError(f"Entity {self.label} is not created yet.")
+            if self.terminated:
+                return
             self._state.append(State.TERMINATED)
             self._terminated_at = Mundus.now
             self.release_resources()
