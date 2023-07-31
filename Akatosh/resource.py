@@ -9,15 +9,19 @@ from .universe import Mundus
 class Resource:
     def __init__(
         self,
-        capacity: int | float | Callable,
-        initial_amount: int | float | Callable | None = None,
+        capacity: int | float | Callable[..., int] | Callable[..., float],
+        initial_amount: int
+        | float
+        | Callable[..., int]
+        | Callable[..., float]
+        | None = None,
         label: str | None = None,
     ) -> None:
         """Resource is a class that represents a resource with capacity and amount, any object can use this resource by calling distribute() and return by calling collect() methods.
 
         Args:
-            capacity (int | float | Callable): the capacity of the resource.
-            initial_amount (int | float | Callable | None, optional): the initial amount of the resource. Defaults to capacity.
+            capacity (int | float | Callable[...,int] | Callable[...,float]): the capacity of the resource.
+            initial_amount (int | float | Callable[...,int] | Callable[...,float] | None, optional): the initial amount of the resource. Defaults to capacity.
             label (str | None, optional): short description of the resource. Defaults to None.
 
         Raises:
@@ -41,8 +45,12 @@ class Resource:
         else:
             self._amount = self.capacity
         self._label = label
-        self._user_records: List[Tuple[object, int | float]] = list() # (user, amount) tracking the usage of individual user
-        self._usage_records: List[Tuple[int | float, int | float]] = list() # (time, amount) tracking the usage of the resource over time
+        self._user_records: List[
+            Tuple[object, int | float]
+        ] = list()  # (user, amount) tracking the usage of individual user
+        self._usage_records: List[
+            Tuple[int | float, int | float]
+        ] = list()  # (time, amount) tracking the usage of the resource over time
 
     def get(self, amount: int | float) -> None:
         """Get the amount of resource from the resource.
@@ -52,7 +60,7 @@ class Resource:
 
         Raises:
             ValueError: raise if amount is greater than the current available amount of resource.
-        """        
+        """
         if amount > self.amount:
             raise ValueError(f"Not enough amount in Resource {self.label}.")
         else:
@@ -67,7 +75,7 @@ class Resource:
 
         Raises:
             ValueError: raise if amount is greater than the current used amount of resource.
-        """        
+        """
         if amount > self.occupied:
             raise ValueError(f"Not enough capacity in Resource {self.label}.")
         else:
@@ -83,7 +91,7 @@ class Resource:
 
         Raises:
             ValueError: raise if amount is greater than the current available amount of resource.
-        """        
+        """
         if amount > self.amount:
             raise ValueError(f"Not enough amount in Resource {self.label}.")
         else:
@@ -107,7 +115,7 @@ class Resource:
 
         Raises:
             ValueError: raise if user is not using the resource or amount is greater than the current used amount of resource.
-        """        
+        """
         if user not in self.users:
             raise ValueError(f"User {user} is not using Resource {self.label}.")
         if amount is None:
@@ -137,12 +145,15 @@ class Resource:
                         )
                         break
 
-    def usage(self, duration: int | float | Callable | None = None):
+    def usage(
+        self,
+        duration: int | float | Callable[..., int] | Callable[..., float] | None = None,
+    ):
         """Return the usage of the resource in the duration.
 
         Args:
-            duration (int | float | Callable | None, optional): the duration to trace back in time. Defaults to None.
-        """        
+            duration (int | float | Callable[...,int] | Callable[...,float] | None, optional): the duration to trace back in time. Defaults to None.
+        """
         if duration:
             if callable(duration):
                 after = Mundus.now - duration()

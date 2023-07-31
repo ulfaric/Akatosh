@@ -17,8 +17,16 @@ class Entity:
     def __init__(
         self,
         label: str | None = None,
-        create_at: int | float | Callable | None = None,
-        terminate_at: int | float | Callable | None = None,
+        create_at: int
+        | float
+        | Callable[..., int]
+        | Callable[..., float]
+        | None = None,
+        terminate_at: int
+        | float
+        | Callable[..., int]
+        | Callable[..., float]
+        | None = None,
         precursor: Entity | List[Entity] | None = None,
     ) -> None:
         """Create a entity.

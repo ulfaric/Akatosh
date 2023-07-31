@@ -14,20 +14,20 @@ from .universe import Mundus
 class Event:
     def __init__(
         self,
-        at: int | float | Callable,
+        at: int | float | Callable[..., int] | Callable[..., float],
         precursor: Event | List[Event] | None = None,
         action: Callable | None = None,
-        priority: int | float | Callable = 0,
+        priority: int | float | Callable[..., int] | Callable[..., float] = 0,
         label: str | None = None,
         **kwargs,
     ) -> None:
         """Base class for all events.
 
         Args:
-            at (int | float | Callable): the time when the event happens.
+            at (int | float | Callable[...,int] | Callable[...,float]): the time when the event happens.
             precursor (Event | List[Event] | None, optional): the precursor events. Defaults to None.
             action (Callable | None, optional): the actual action of the event, must be defined. Defaults to None.
-            priority (int | float | Callable, optional): the priority of the event. When multiple event happen at the same time, the event with lower priority value will happen first. Defaults to 0.
+            priority (int | float | Callable[...,int] | Callable[...,float], optional): the priority of the event. When multiple event happen at the same time, the event with lower priority value will happen first. Defaults to 0.
             label (str | None, optional): Short descirption of the event. Defaults to None.
         """
         self._id = uuid4().int
@@ -86,7 +86,7 @@ class Event:
 
     def activate(self, force: bool = False):
         """Activate the event."""
-        
+
         # raise error if the event has already ended
         if self.ended:
             raise RuntimeError(f"Event {self.label} has already ended.")
@@ -95,7 +95,7 @@ class Event:
         if self.cancelled:
             warnings.warn(f"Event {self.label} is cancelled.")
             return
-        
+
         # return if the event is already active
         if self.active:
             return
@@ -119,11 +119,11 @@ class Event:
         Raises:
             RuntimeError: raise if the event has already ended.
         """
-        
+
         # raise error if the event has already ended
         if self.ended:
             raise RuntimeError(f"Event {self.label} has already ended.")
-        
+
         # raise warning if the event is cancelled
         if self.cancelled:
             warnings.warn(f"Event {self.label} is cancelled.")
@@ -141,7 +141,7 @@ class Event:
         Raises:
             RuntimeError: raise if the event has already ended.
         """
-        
+
         # raise error if the event has already ended
         if self.ended:
             raise RuntimeError(f"Event {self.label} has already ended.")
@@ -238,20 +238,20 @@ class InstantEvent(Event):
 
     def __init__(
         self,
-        at: int | float | Callable[..., Any],
+        at: int | float | Callable[..., int] | Callable[..., float],
         precursor: Event | List[Event] | None = None,
         action: Callable[..., Any] | None = None,
-        priority: int | float | Callable[..., Any] = 0,
+        priority: int | float | Callable[..., int] | Callable[..., float] = 0,
         label: str | None = None,
         **kwargs,
     ) -> None:
         """Create a instant event.
 
         Args:
-            at (int | float | Callable): the time when the event happens.
+            at (int | float | Callable[...,int] | Callable[...,float]): the time when the event happens.
             precursor (Event | List[Event] | None, optional): the precursor events. Defaults to None.
             action (Callable | None, optional): the actual action of the event, must be defined. Defaults to None.
-            priority (int | float | Callable, optional): the priority of the event. When multiple event happen at the same time, the event with lower priority value will happen first. Defaults to 0.
+            priority (int | float | Callable[...,int] | Callable[...,float], optional): the priority of the event. When multiple event happen at the same time, the event with lower priority value will happen first. Defaults to 0.
             label (str | None, optional): Short descirption of the event. Defaults to None.
         """
         super().__init__(at, precursor, action, priority, label, **kwargs)
@@ -270,9 +270,9 @@ class InstantEvent(Event):
 
 
 def instant_event(
-    at: int | float | Callable,
+    at: int | float | Callable[..., int] | Callable[..., float],
     precursor: Event | List[Event] | None = None,
-    priority: int | float | Callable = 0,
+    priority: int | float | Callable[..., int] | Callable[..., float] = 0,
     label: str | None = None,
     **kwargs,
 ):
@@ -301,24 +301,24 @@ def instant_event(
 class ContinuousEvent(Event):
     def __init__(
         self,
-        at: int | float | Callable[..., Any],
-        interval: int | float | Callable[..., Any],
-        duration: int | float | Callable[..., Any],
+        at: int | float | Callable[..., int] | Callable[..., float],
+        interval: int | float | Callable[..., int] | Callable[..., float],
+        duration: int | float | Callable[..., int] | Callable[..., float],
         precursor: Event | List[Event] | None = None,
         action: Callable[..., Any] | None = None,
-        priority: int | float | Callable[..., Any] = 0,
+        priority: int | float | Callable[..., int] | Callable[..., float] = 0,
         label: str | None = None,
         **kwargs,
     ) -> None:
         """Continous event is an event that happens at a specific time and happens multiple times for a specific duration.
 
         Args:
-            at (int | float | Callable[..., Any]): when the event happens.
-            interval (int | float | Callable[..., Any]): the interval between each action repeat.
-            duration (int | float | Callable[..., Any]): the duration of the event.
+            at (int | float | Callable[...,int] | Callable[...,float]): when the event happens.
+            interval (int | float | Callable[...,int] | Callable[...,float]): the interval between each action repeat.
+            duration (int | float | Callable[...,int] | Callable[...,float]): the duration of the event.
             precursor (Event | List[Event] | None, optional): the precursor events, can be both instant events or continous events. Defaults to None.
             action (Callable[..., Any] | None, optional): the actual action of the event. Defaults to None.
-            priority (int | float | Callable[..., Any], optional): the priority of the event. Defaults to 0.
+            priority (int | float | Callable[...,int] | Callable[...,float], optional): the priority of the event. Defaults to 0.
             label (str | None, optional): short description of the event.. Defaults to None.
         """
         super().__init__(
@@ -352,9 +352,8 @@ class ContinuousEvent(Event):
                 Mundus.current_events.remove(self)
             else:
                 self.end()
-                
+
     def activate(self, force: bool = False):
-        
         if Mundus.now > self.till:
             warnings.warn(f"Event {self.label} has passed due time.")
         else:
@@ -382,22 +381,22 @@ class ContinuousEvent(Event):
 
 
 def continuous_event(
-    at: int | float | Callable,
-    interval: int | float | Callable,
-    duration: int | float | Callable,
+    at: int | float | Callable[..., int] | Callable[..., float],
+    interval: int | float | Callable[..., int] | Callable[..., float],
+    duration: int | float | Callable[..., int] | Callable[..., float],
     precursor: Event | List[Event] | None = None,
-    priority: int | float | Callable = 0,
+    priority: int | float | Callable[..., int] | Callable[..., float] = 0,
     label: str | None = None,
     **kwargs,
 ):
     """A decorator for creating continous event.
 
     Args:
-        at (int | float | Callable): when the continuous event starts.
-        interval (int | float | Callable): how frequent the event happens.
-        duration (int | float | Callable): the duration of the event.
+        at (int | float | Callable[...,int] | Callable[...,float]): when the continuous event starts.
+        interval (int | float | Callable[...,int] | Callable[...,float]): how frequent the event happens.
+        duration (int | float | Callable[...,int] | Callable[...,float]): the duration of the event.
         precursor (Event | List[Event] | None, optional): the precursors for this event. Defaults to None.
-        priority (int | float | Callable, optional): the priority for this event. Defaults to 0.
+        priority (int | float | Callable[...,int] | Callable[...,float], optional): the priority for this event. Defaults to 0.
         label (str | None, optional): short description of the event. Defaults to None.
     """
 
