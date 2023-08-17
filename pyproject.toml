@@ -1,6 +1,6 @@
 [project]
 name = "Akatosh"
-version = "2.1.9"
+version = "2.2.0"
 authors = [{ name = "Yifei Ren", email = "ryf0510@live.com" }]
 description = "A simple implement for discrete events simulation."
 readme = "README.md"
