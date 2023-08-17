@@ -107,7 +107,7 @@ class Event:
         else:
             if all(e.state == State.ENDED for e in self.precursor):
                 self.state = State.ACTIVE
-                self._at = Mundus.now
+                # self._at = Mundus.now
                 logger.debug(f"Event {self.label} is set to active.")
             else:
                 warnings.warn(f"Event {self.label} is waiting for other events to end.")

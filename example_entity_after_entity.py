@@ -14,7 +14,7 @@ class TestEntity(Entity):
 test_entity_1 = TestEntity(label="Test Entity 1", create_at=0, terminate_at=10)
 
 # create second entity at 0s and terminate at 12s but after first entity
-test_entity_2 = TestEntity(label="Test Entity 2", create_at=0, terminate_at=12, precursor=test_entity_1)
+test_entity_2 = TestEntity(label="Test Entity 2", create_at = 5, terminate_at=12, precursor=test_entity_1)
 
 
 
