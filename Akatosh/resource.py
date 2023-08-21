@@ -9,19 +9,15 @@ from .universe import Mundus
 class Resource:
     def __init__(
         self,
-        capacity: int | float | Callable[..., int] | Callable[..., float],
-        initial_amount: int
-        | float
-        | Callable[..., int]
-        | Callable[..., float]
-        | None = None,
+        capacity: int | float | Callable,
+        initial_amount: int | float | Callable | None = None,
         label: str | None = None,
     ) -> None:
         """Resource is a class that represents a resource with capacity and amount, any object can use this resource by calling distribute() and return by calling collect() methods.
 
         Args:
-            capacity (int | float | Callable[...,int] | Callable[...,float]): the capacity of the resource.
-            initial_amount (int | float | Callable[...,int] | Callable[...,float] | None, optional): the initial amount of the resource. Defaults to capacity.
+            capacity (int | float | Callable): the capacity of the resource.
+            initial_amount (int | float | Callable | None, optional): the initial amount of the resource. Defaults to capacity.
             label (str | None, optional): short description of the resource. Defaults to None.
 
         Raises:
@@ -145,14 +141,11 @@ class Resource:
                         )
                         break
 
-    def utilization(
-        self,
-        duration: int | float | Callable[..., int] | Callable[..., float] | None = None,
-    ):
+    def utilization(self, duration: int | float | Callable | None = None):
         """Return the utilization ( occupied amount / capacity ) of the resource in the duration.
 
         Args:
-            duration (int | float | Callable[...,int] | Callable[...,float] | None, optional): the duration to trace back in time. Defaults to None.
+            duration (int | float | Callable | None, optional): the duration to trace back in time. Defaults to None.
         """
         if duration:
             if callable(duration):
@@ -184,54 +177,21 @@ class Resource:
                             weighted_overall_amount += record[1] * (
                                 record[0] - usage_records[index - 1][0]
                             )
-                    return 1 - (
-                        weighted_overall_amount / (usage_records[-1][0] - after)
+                    return (
+                        1
+                        - (weighted_overall_amount / (usage_records[-1][0] - after))
+                        / self.capacity
                     )
         else:
             return 1 - (self.amount / self.capacity)
-        
-    def usage(
-        self,
-        duration: int | float | Callable[..., int] | Callable[..., float] | None = None,
-    ):
-        """Return the usage of the resource in the duration.
+
+    def usage(self, duration: int | float | Callable | None = None):
+        """Return the usage ( occupied amount ) of the resource in the duration.
 
         Args:
-            duration (int | float | Callable[...,int] | Callable[...,float] | None, optional): the duration to trace back in time. Defaults to None.
+            duration (int | float | Callable | None, optional): the duration to trace back in time. Defaults to None.
         """
-        if duration:
-            if callable(duration):
-                after = Mundus.now - duration()
-            else:
-                after = Mundus.now - duration
-            if after < 0:
-                after = 0
-            usage_records = [
-                usage_record
-                for usage_record in self.usage_records
-                if usage_record[0] >= after
-            ]
-            if len(usage_records) == 0:
-                return 1 - (self.amount / self.capacity)
-            else:
-                if usage_records[-1][0] - after == 0:
-                    return 1 - (usage_records[-1][1] / self.capacity)
-                else:
-                    weighted_overall_amount = 0
-                    for index, record in enumerate(usage_records):
-                        if index == 0:
-                            weighted_overall_amount += record[1] * (record[0] - after)
-                        elif index == len(usage_records) - 1:
-                            weighted_overall_amount += record[1] * (
-                                Mundus.now - usage_records[index - 1][0]
-                            )
-                        else:
-                            weighted_overall_amount += record[1] * (
-                                record[0] - usage_records[index - 1][0]
-                            )
-                    return weighted_overall_amount / (usage_records[-1][0] - after) * self.capacity
-        else:
-            return self.amount
+        return self.capacity * self.utilization(duration)
 
     @property
     def amount(self) -> int | float:
