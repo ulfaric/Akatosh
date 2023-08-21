@@ -145,11 +145,11 @@ class Resource:
                         )
                         break
 
-    def usage(
+    def utilization(
         self,
         duration: int | float | Callable[..., int] | Callable[..., float] | None = None,
     ):
-        """Return the usage of the resource in the duration.
+        """Return the utilization ( occupied amount / capacity ) of the resource in the duration.
 
         Args:
             duration (int | float | Callable[...,int] | Callable[...,float] | None, optional): the duration to trace back in time. Defaults to None.
@@ -189,6 +189,49 @@ class Resource:
                     )
         else:
             return 1 - (self.amount / self.capacity)
+        
+    def usage(
+        self,
+        duration: int | float | Callable[..., int] | Callable[..., float] | None = None,
+    ):
+        """Return the usage of the resource in the duration.
+
+        Args:
+            duration (int | float | Callable[...,int] | Callable[...,float] | None, optional): the duration to trace back in time. Defaults to None.
+        """
+        if duration:
+            if callable(duration):
+                after = Mundus.now - duration()
+            else:
+                after = Mundus.now - duration
+            if after < 0:
+                after = 0
+            usage_records = [
+                usage_record
+                for usage_record in self.usage_records
+                if usage_record[0] >= after
+            ]
+            if len(usage_records) == 0:
+                return 1 - (self.amount / self.capacity)
+            else:
+                if usage_records[-1][0] - after == 0:
+                    return 1 - (usage_records[-1][1] / self.capacity)
+                else:
+                    weighted_overall_amount = 0
+                    for index, record in enumerate(usage_records):
+                        if index == 0:
+                            weighted_overall_amount += record[1] * (record[0] - after)
+                        elif index == len(usage_records) - 1:
+                            weighted_overall_amount += record[1] * (
+                                Mundus.now - usage_records[index - 1][0]
+                            )
+                        else:
+                            weighted_overall_amount += record[1] * (
+                                record[0] - usage_records[index - 1][0]
+                            )
+                    return weighted_overall_amount / (usage_records[-1][0] - after) * self.capacity
+        else:
+            return self.amount
 
     @property
     def amount(self) -> int | float:
