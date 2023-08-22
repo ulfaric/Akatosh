@@ -64,7 +64,7 @@ class Event:
         if Mundus.now < self.at:
             Mundus.future_events.append(self)
         elif Mundus.now > self.at:
-            raise RuntimeError(f"Event {self.label} tries to later the past.")
+            raise RuntimeError(f"Event {self.label} tries to alter the past.")
         else:
             Mundus.current_events.append(self)
 
@@ -358,7 +358,8 @@ class ContinuousEvent(Event):
 
     def activate(self, force: bool = False):
         if Mundus.now > self.till:
-            warnings.warn(f"Event {self.label} has passed due time.")
+            logger.debug(f"Event {self.label} has passed due time.")
+            return
         else:
             super().activate(force)
 

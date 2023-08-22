@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from abc import abstractmethod
 from collections.abc import Iterable
+from logging import warn
+from math import inf, log
 from typing import Callable, Iterable, List
 from uuid import uuid4
 
@@ -42,77 +44,124 @@ class Entity:
         self._occupied_resources: List[Resource] = list()
         self._registered_lists: List[EntityList] = list()
         self._creation: InstantEvent = None  # type: ignore
-        self._created_at: int | float = float()
         self._termination: InstantEvent = None  # type: ignore
-        self._terminated_at: int | float = float()
         self._events: List[Event] = list()
+        
+        # assign precursor and followers
         if isinstance(precursor, list):
             self._precursor = precursor
         elif precursor is None:
             self._precursor = []
         else:
             self._precursor = [precursor]
+        self._followers: List[Entity] = []
+        for event in self.precursor:
+            event._followers.append(self)
 
+        # assign create_at and terminate_at
         if create_at is not None:
             if callable(create_at):
-                self.create(at=round(create_at(), Mundus.resolution))
+                self._created_at = round(create_at(), Mundus.resolution)
             else:
-                self.create(at=round(create_at, Mundus.resolution))
+                self._created_at = round(create_at, Mundus.resolution)
+        else:
+            self._created_at = inf
 
         if terminate_at is not None:
             if callable(terminate_at):
-                self.terminate(at=round(terminate_at(), Mundus.resolution))
+                self._terminated_at = round(terminate_at(), Mundus.resolution)
             else:
-                self.terminate(at=round(terminate_at, Mundus.resolution))
+                self._terminated_at = round(terminate_at, Mundus.resolution)
+        else:
+            self._terminated_at = inf
 
-    def create(self, at: int | float, force=False) -> None:
+        # create the entity if no precursor
+        if len(self.precursor) == 0:
+            self.create()
+
+        # terminate the entity at given time if terminate_at is given
+        if terminate_at is not None:
+            self.terminate()
+
+    def create(self, force=False) -> None:
         """The creation of the entity."""
 
+        # check if the entity is already over due
+        if Mundus.now > self.terminated_at:
+            logger.debug(
+                f"Entity {self.label} passed due time."
+            )
+            return
+
+        # call back function for creation
         def _create():
             if self.terminated:
                 raise RuntimeError(f"Entity {self.label} is already terminated.")
             if self.created:
                 return
             self._state.append(State.CREATED)
-            self._created_at = Mundus.now
             self.on_creation()
             logger.debug(f"Entity {self.label} created at {Mundus.now}")
 
+        # force creation if force is True, regardless of the precursor
         if force:
+            if self.created_at < Mundus.now:
+                self._created_at = Mundus.now
             self._creation = InstantEvent(
-                at=at, action=_create, label=f"Creation of {self.label}", priority=-2
+                at=self.created_at,
+                action=_create,
+                label=f"Creation of {self.label}",
+                priority=-2,
             )
         else:
+            # check if all precursors are terminated, if so, create the entity
             if len(self.precursor) != 0:
                 if all(p.terminated for p in self.precursor):
+                    if self.created_at < Mundus.now:
+                        self._created_at = Mundus.now
                     self._creation = InstantEvent(
-                        at=at, action=_create, label=f"Creation of {self.label}", priority=-2
+                        at=self.created_at,
+                        action=_create,
+                        label=f"Creation of {self.label}",
+                        priority=-2,
                     )
-
+            # no precursor, create the entity
+            else:
+                if self.created_at < Mundus.now:
+                    self._created_at = Mundus.now
+                self._creation = InstantEvent(
+                    at=self.created_at,
+                    action=_create,
+                    label=f"Creation of {self.label}",
+                    priority=-2,
+                )
 
     @abstractmethod
     def on_creation(self):
         """Callback function upon creation of the entity"""
         pass
 
-    def terminate(self, at: int | float) -> None:
+    def terminate(self) -> None:
         """The termination of the entity. This will release all occupied resource, remove the entity from all entity lists, and cancel all unfinished events."""
 
         def _terminate():
-            if not self.created:
-                raise RuntimeError(f"Entity {self.label} is not created yet.")
             if self.terminated:
                 return
             self._state.append(State.TERMINATED)
-            self._terminated_at = Mundus.now
             self.release_resources()
             self.unregister_from_lists()
             self.cancel_unfinished_events()
-            self.on_termination()
+            if self.created:
+                self.on_termination()
             logger.debug(f"Entity {self.label} terminated at {Mundus.now}")
+            for entity in self._followers:
+                entity.create()
 
         self._termination = InstantEvent(
-            at=at, action=_terminate, label=f"Termination of {self.label}", priority=-2
+            at=self.terminated_at,
+            action=_terminate,
+            label=f"Termination of {self.label}",
+            priority=-2,
         )
 
     @abstractmethod
@@ -124,6 +173,17 @@ class Entity:
         self, resource: Resource, amount: int | float | Callable | None = None
     ) -> None:
         """Consume certain amout from a resource. if no amount is specified, consume all."""
+
+        if not self.created:
+            raise RuntimeError(
+                f"Entity {self} is not created yet, can not interact with any resource."
+            )
+
+        if self.terminated:
+            raise RuntimeError(
+                f"Entity {self} is already terminated, can not interact with any resource."
+            )
+
         if amount:
             if callable(amount):
                 resource.distribute(self, amount())
@@ -138,6 +198,16 @@ class Entity:
         self, resource: Resource, amount: int | float | Callable | None = None
     ) -> None:
         """Return certain amout to a resource. if no amount is specified, return all."""
+        if not self.created:
+            raise RuntimeError(
+                f"Entity {self} is not created yet, can not interact any resource."
+            )
+
+        if self.terminated:
+            raise RuntimeError(
+                f"Entity {self} is already terminated, can not interact any resource."
+            )
+
         if amount:
             if callable(amount):
                 resource.collect(self, amount())

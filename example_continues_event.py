@@ -17,18 +17,18 @@ def action2():
 
 # create a continuous event start at 0s and last 15s but with the first event as precursor
 event2 = ContinuousEvent(
-    at=0,
+    at=11,
     interval=random.random(),
-    duration=15,
+    duration=12,
     action=action2,
     label="Test2",
     priority=-1,
-    precursor=event,
+    precursor=[event],
 )
 
-@instant_event(at=3, label="End Test 1")
-def end_event():
-    event.end()
+# @instant_event(at=3, label="End Test 1")
+# def end_event():
+#     event.end()
 
 # # create a third continuous event with decorator
 # @continuous_event(at=0, interval=random.random(), duration=15, label="Test3")
