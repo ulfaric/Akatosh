@@ -195,11 +195,14 @@ class Entity:
         def _continous_event(func: Callable):
             # define a function that validate the entity state first, then create the event
             def __continous_event():
+                if not self.created:
+                    raise RuntimeError(
+                        f"Entity {self} is not created yet, can not engage in any event."
+                    )
                 if self.terminated:
                     raise RuntimeError(
-                        f"Entity {self.label} is already terminated, can not engage in any event."
+                        f"Entity {self} is already terminated, can not engage in any event."
                     )
-
                 self.events.append(
                     ContinuousEvent(
                         at=at,
@@ -242,9 +245,13 @@ class Entity:
 
         def _instant_event(func: Callable):
             def __instant_event():
+                if not self.created:
+                    raise RuntimeError(
+                        f"Entity {self} is not created yet, can not engage in any event."
+                    )
                 if self.terminated:
                     raise RuntimeError(
-                        f"Entity {self.label} is already terminated, can not engage in any event."
+                        f"Entity {self} is already terminated, can not engage in any event."
                     )
 
                 self.events.append(
