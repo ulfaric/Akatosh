@@ -39,13 +39,15 @@ class Event:
         # set the target event(s) that this event should wait and follow
         if isinstance(precursor, list):
             self._precursor = precursor
+        elif precursor is None:
+            self._precursor = []
         else:
-            self._precursor = [precursor] if precursor is not None else []
+            self._precursor = [precursor]
         self._follower: List[Event] = []
         for event in self.precursor:
             event._follower.append(self)
         # set the state
-        if precursor:
+        if len(self.precursor) != 0:
             self.state = State.INACTIVE
         else:
             self.state = State.ACTIVE
@@ -107,7 +109,8 @@ class Event:
         else:
             if all(e.state == State.ENDED for e in self.precursor):
                 self.state = State.ACTIVE
-                # self._at = Mundus.now
+                if self._at < Mundus.now:
+                    self._at = Mundus.now
                 logger.debug(f"Event {self.label} is set to active.")
             else:
                 warnings.warn(f"Event {self.label} is waiting for other events to end.")

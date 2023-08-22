@@ -46,7 +46,12 @@ class Entity:
         self._termination: InstantEvent = None  # type: ignore
         self._terminated_at: int | float = float()
         self._events: List[Event] = list()
-        self._precursor = precursor
+        if isinstance(precursor, list):
+            self._precursor = precursor
+        elif precursor is None:
+            self._precursor = []
+        else:
+            self._precursor = [precursor]
 
         if create_at is not None:
             if callable(create_at):
@@ -60,7 +65,7 @@ class Entity:
             else:
                 self.terminate(at=round(terminate_at, Mundus.resolution))
 
-    def create(self, at: int | float) -> None:
+    def create(self, at: int | float, force=False) -> None:
         """The creation of the entity."""
 
         def _create():
@@ -73,27 +78,17 @@ class Entity:
             self.on_creation()
             logger.debug(f"Entity {self.label} created at {Mundus.now}")
 
-        if self.precursor is None:
+        if force:
             self._creation = InstantEvent(
                 at=at, action=_create, label=f"Creation of {self.label}", priority=-2
             )
         else:
-            if isinstance(self.precursor, list):
-                self._creation = InstantEvent(
-                    at=at,
-                    action=_create,
-                    label=f"Creation of {self.label}",
-                    priority=-2,
-                    precursor=[e._termination for e in self.precursor],
-                )
-            else:
-                self._creation = InstantEvent(
-                    at=at,
-                    action=_create,
-                    label=f"Creation of {self.label}",
-                    priority=-2,
-                    precursor=self.precursor._termination,
-                )
+            if len(self.precursor) != 0:
+                if all(p.terminated for p in self.precursor):
+                    self._creation = InstantEvent(
+                        at=at, action=_create, label=f"Creation of {self.label}", priority=-2
+                    )
+
 
     @abstractmethod
     def on_creation(self):
