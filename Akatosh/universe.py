@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from math import log
 from typing import TYPE_CHECKING, List
 
 from .logger import logger

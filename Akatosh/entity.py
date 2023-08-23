@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import abstractmethod
 from collections.abc import Iterable
-from math import inf, log
+from math import inf
 from typing import Callable, Iterable, List
 from uuid import uuid4
 
