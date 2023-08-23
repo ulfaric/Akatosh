@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from abc import abstractmethod
 from collections.abc import Iterable
-from logging import warn
 from math import inf, log
 from typing import Callable, Iterable, List
 from uuid import uuid4
@@ -83,6 +82,9 @@ class Entity:
 
     def create(self, at: int | float, force=False) -> None:
         """The creation of the entity."""
+        if self.created:
+            logger.warning(f"Entity {self.label} is already created.")
+            return
 
         # check if the entity is already over due
         if at > self.terminate_at:
@@ -141,9 +143,11 @@ class Entity:
     def terminate(self, at: int | float) -> None:
         """The termination of the entity. This will release all occupied resource, remove the entity from all entity lists, and cancel all unfinished events."""
 
+        if self.terminated:
+            logger.warning(f"Entity {self.label} is already terminated.")
+            return
+
         def _terminate():
-            if self.terminated:
-                return
             self._terminated_at = Mundus.now
             self._state.append(State.TERMINATED)
             self.release_resources()
@@ -154,7 +158,7 @@ class Entity:
             logger.debug(f"Entity {self.label} terminated at {Mundus.now}")
             for entity in self._followers:
                 entity.create(Mundus.now)
-                
+
         if self._termination is not None:
             self._termination.cancel()
 
@@ -357,7 +361,7 @@ class Entity:
     def create_at(self):
         """Return the time when the entity should be created."""
         return self._create_at
-    
+
     @property
     def created_at(self):
         """Return the time when the entity is created."""
@@ -377,7 +381,7 @@ class Entity:
     def terminated_at(self):
         """Return the time when the entity is terminated."""
         return self._terminated_at
-    
+
     @property
     def ocupied_resources(self):
         """Return the resources occupied by the entity."""
