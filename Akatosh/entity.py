@@ -35,8 +35,8 @@ class Entity:
 
         Args:
             label (str | None, optional): short description of the entity. Defaults to None.
-            create_at (int | float | Callable | None, optional): when the life cycle of this entity should start. Defaults to None, then must call create() method manually.
-            terminate_at (int | float | Callable | None, optional): when the life cycle of this entity should end. Defaults to None, then must call terminate() method manually.
+            create_at (int | float | Callable | None, optional): when the life cycle of this entity should start. Defaults to 0, then must call create() method manually.
+            terminate_at (int | float | Callable | None, optional): when the life cycle of this entity should end. Defaults to inf, then must call terminate() method manually.
         """
         self._id = uuid4().int
         self._label = label
@@ -46,7 +46,7 @@ class Entity:
         self._creation: InstantEvent = None  # type: ignore
         self._termination: InstantEvent = None  # type: ignore
         self._events: List[Event] = list()
-        
+
         # assign precursor and followers
         if isinstance(precursor, list):
             self._precursor = precursor
@@ -61,36 +61,32 @@ class Entity:
         # assign create_at and terminate_at
         if create_at is not None:
             if callable(create_at):
-                self._created_at = round(create_at(), Mundus.resolution)
+                self._create_at = round(create_at(), Mundus.resolution)
             else:
-                self._created_at = round(create_at, Mundus.resolution)
+                self._create_at = round(create_at, Mundus.resolution)
         else:
-            self._created_at = inf
+            self._create_at = 0
+        self._created_at = float()
 
         if terminate_at is not None:
             if callable(terminate_at):
-                self._terminated_at = round(terminate_at(), Mundus.resolution)
+                self._terminate_at = round(terminate_at(), Mundus.resolution)
             else:
-                self._terminated_at = round(terminate_at, Mundus.resolution)
+                self._terminate_at = round(terminate_at, Mundus.resolution)
         else:
-            self._terminated_at = inf
+            self._terminate_at = inf
+        self._terminated_at = float()
 
         # create the entity if no precursor
-        if len(self.precursor) == 0:
-            self.create()
+        if create_at is not None and len(self.precursor) == 0:
+            self.create(self.create_at)
 
-        # terminate the entity at given time if terminate_at is given
-        if terminate_at is not None:
-            self.terminate()
-
-    def create(self, force=False) -> None:
+    def create(self, at: int | float, force=False) -> None:
         """The creation of the entity."""
 
         # check if the entity is already over due
-        if Mundus.now > self.terminated_at:
-            logger.debug(
-                f"Entity {self.label} passed due time."
-            )
+        if at > self.terminate_at:
+            logger.debug(f"Entity {self.label} passed due time.")
             return
 
         # call back function for creation
@@ -99,54 +95,56 @@ class Entity:
                 raise RuntimeError(f"Entity {self.label} is already terminated.")
             if self.created:
                 return
+            self._created_at = Mundus.now
             self._state.append(State.CREATED)
             self.on_creation()
-            logger.debug(f"Entity {self.label} created at {Mundus.now}")
+            logger.debug(f"Entity {self.label} created at {at}")
 
-        # force creation if force is True, regardless of the precursor
+        # force creation if force is True, regardless of the precursor and the time
         if force:
-            if self.created_at < Mundus.now:
-                self._created_at = Mundus.now
             self._creation = InstantEvent(
-                at=self.created_at,
+                at=self.create_at if self.create_at > at else at,
                 action=_create,
                 label=f"Creation of {self.label}",
                 priority=-2,
             )
+            if self.terminate_at < inf:
+                self.terminate(self.terminate_at)
         else:
             # check if all precursors are terminated, if so, create the entity
             if len(self.precursor) != 0:
                 if all(p.terminated for p in self.precursor):
-                    if self.created_at < Mundus.now:
-                        self._created_at = Mundus.now
                     self._creation = InstantEvent(
-                        at=self.created_at,
+                        at=self.create_at if self.create_at > at else at,
                         action=_create,
                         label=f"Creation of {self.label}",
                         priority=-2,
                     )
+                    if self.terminate_at < inf:
+                        self.terminate(self.terminate_at)
             # no precursor, create the entity
             else:
-                if self.created_at < Mundus.now:
-                    self._created_at = Mundus.now
                 self._creation = InstantEvent(
-                    at=self.created_at,
+                    at=self.create_at if self.create_at > at else at,
                     action=_create,
                     label=f"Creation of {self.label}",
                     priority=-2,
                 )
+                if self.terminate_at < inf:
+                    self.terminate(self.terminate_at)
 
     @abstractmethod
     def on_creation(self):
         """Callback function upon creation of the entity"""
         pass
 
-    def terminate(self) -> None:
+    def terminate(self, at: int | float) -> None:
         """The termination of the entity. This will release all occupied resource, remove the entity from all entity lists, and cancel all unfinished events."""
 
         def _terminate():
             if self.terminated:
                 return
+            self._terminated_at = Mundus.now
             self._state.append(State.TERMINATED)
             self.release_resources()
             self.unregister_from_lists()
@@ -155,10 +153,13 @@ class Entity:
                 self.on_termination()
             logger.debug(f"Entity {self.label} terminated at {Mundus.now}")
             for entity in self._followers:
-                entity.create()
+                entity.create(Mundus.now)
+                
+        if self._termination is not None:
+            self._termination.cancel()
 
         self._termination = InstantEvent(
-            at=self.terminated_at,
+            at=self.terminate_at if self.terminate_at < at else at,
             action=_terminate,
             label=f"Termination of {self.label}",
             priority=-2,
@@ -353,6 +354,11 @@ class Entity:
         return State.CREATED in self.state
 
     @property
+    def create_at(self):
+        """Return the time when the entity should be created."""
+        return self._create_at
+    
+    @property
     def created_at(self):
         """Return the time when the entity is created."""
         return self._created_at
@@ -363,10 +369,15 @@ class Entity:
         return State.TERMINATED in self.state
 
     @property
+    def terminate_at(self):
+        """Return the time when the entity should be terminated."""
+        return self._terminate_at
+
+    @property
     def terminated_at(self):
         """Return the time when the entity is terminated."""
         return self._terminated_at
-
+    
     @property
     def ocupied_resources(self):
         """Return the resources occupied by the entity."""

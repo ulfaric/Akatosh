@@ -15,9 +15,9 @@ event = ContinuousEvent(
 def action2():
     print(f"Hello World at {Mundus.now} from Test 2")
 
-# create a continuous event start at 0s and last 15s but with the first event as precursor
+# create a continuous event start at 8s and last 12s but with the first event as precursor
 event2 = ContinuousEvent(
-    at=11,
+    at=8,
     interval=random.random(),
     duration=12,
     action=action2,
@@ -26,17 +26,18 @@ event2 = ContinuousEvent(
     precursor=[event],
 )
 
-# @instant_event(at=3, label="End Test 1")
-# def end_event():
-#     event.end()
+# create a instant event to terminate the first continuous event
+@instant_event(at=3, label="End Test 1")
+def end_event():
+    event.end()
 
-# # create a third continuous event with decorator
-# @continuous_event(at=0, interval=random.random(), duration=15, label="Test3")
-# def action3():
-#     print(f"Hello World at {Mundus.now} from Test 3")
+# create a third continuous event with decorator
+@continuous_event(at=0, interval=random.random(), duration=15, label="Test3")
+def action3():
+    print(f"Hello World at {Mundus.now} from Test 3")
 
 # enable debug message
-Mundus.set_logger(logging.DEBUG)
+# Mundus.set_logger(logging.DEBUG)
 
 # run simulation
 Mundus.simulate()

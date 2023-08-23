@@ -104,7 +104,8 @@ class Event:
 
         if force:
             self.state = State.ACTIVE
-            self._at = Mundus.now
+            if self._at < Mundus.now:
+                self._at = Mundus.now
             logger.debug(f"Event {self.label} is set to active.")
         else:
             if all(e.state == State.ENDED for e in self.precursor):
