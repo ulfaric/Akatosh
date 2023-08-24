@@ -44,6 +44,7 @@ class Entity:
         self._registered_lists: List[EntityList] = list()
         self._creation: InstantEvent = None  # type: ignore
         self._termination: InstantEvent = None  # type: ignore
+        self._destruction: InstantEvent = None  # type: ignore
         self._events: List[Event] = list()
 
         # assign precursor and followers
@@ -93,10 +94,6 @@ class Entity:
 
         # call back function for creation
         def _create():
-            if self.terminated:
-                raise RuntimeError(f"Entity {self.label} is already terminated.")
-            if self.created:
-                return
             self._created_at = Mundus.now
             self._state.append(State.CREATED)
             self.on_creation()
@@ -110,8 +107,7 @@ class Entity:
                 label=f"Creation of {self.label}",
                 priority=-2,
             )
-            if self.terminate_at < inf:
-                self.terminate(self.terminate_at)
+            self.terminate(self.terminate_at)
         else:
             # check if all precursors are terminated, if so, create the entity
             if len(self.precursor) != 0:
@@ -122,8 +118,7 @@ class Entity:
                         label=f"Creation of {self.label}",
                         priority=-2,
                     )
-                    if self.terminate_at < inf:
-                        self.terminate(self.terminate_at)
+                    self.terminate(self.terminate_at)
             # no precursor, create the entity
             else:
                 self._creation = InstantEvent(
@@ -132,8 +127,7 @@ class Entity:
                     label=f"Creation of {self.label}",
                     priority=-2,
                 )
-                if self.terminate_at < inf:
-                    self.terminate(self.terminate_at)
+                self.terminate(self.terminate_at)
 
     @abstractmethod
     def on_creation(self):
@@ -153,25 +147,58 @@ class Entity:
             self.release_resources()
             self.unregister_from_lists()
             self.cancel_unfinished_events()
-            if self.created:
-                self.on_termination()
+            self.on_termination()
             logger.debug(f"Entity {self.label} terminated at {Mundus.now}")
             for entity in self._followers:
                 entity.create(Mundus.now)
+            
+        if self._terminate_at > at:
+            self._terminate_at = at
+            
+            if self._termination is not None:
+                self._termination.cancel()
 
-        if self._termination is not None:
-            self._termination.cancel()
-
-        self._termination = InstantEvent(
-            at=self.terminate_at if self.terminate_at < at else at,
-            action=_terminate,
-            label=f"Termination of {self.label}",
-            priority=-2,
-        )
+            self._termination = InstantEvent(
+                at=self.terminate_at,
+                action=_terminate,
+                label=f"Termination of {self.label}",
+                priority=-2,
+            )
 
     @abstractmethod
     def on_termination(self):
         """Callback function upon termination of the entity"""
+        pass
+    
+    def destory(self, at: int | float) -> None:
+        """The Destruction of the entity. This will release all occupied resource, remove the entity from all entity lists, and cancel all unfinished events."""
+
+        if self.terminated:
+            logger.warning(f"Entity {self.label} is already terminated.")
+            return
+
+        def _terminate():
+            self._terminated_at = Mundus.now
+            self._state.append(State.TERMINATED)
+            self.release_resources()
+            self.unregister_from_lists()
+            self.cancel_unfinished_events()
+            self.on_destruction()
+            logger.debug(f"Entity {self.label} destoried at {Mundus.now}")
+
+        if self._destruction is not None:
+            self._destruction.cancel()
+
+        self._destruction = InstantEvent(
+            at=self.terminate_at if self.terminate_at < at else at,
+            action=_terminate,
+            label=f"Destruction of {self.label}",
+            priority=-2,
+        )
+
+    @abstractmethod
+    def on_destruction(self):
+        """Callback function upon destruction of the entity"""
         pass
 
     def get(
