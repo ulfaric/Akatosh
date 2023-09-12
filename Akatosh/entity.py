@@ -479,7 +479,8 @@ class EntityList(list):
             __object (Entity): the entity to be removed.
         """
         super().remove(__object)
-        __object.registered_lists.remove(self)
+        if self in __object.registered_lists:
+            __object.registered_lists.remove(self)
         logger.debug(
             f"Entity {__object.label} is removed from {self.label if self.label else self}."
         )
