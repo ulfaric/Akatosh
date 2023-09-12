@@ -220,10 +220,12 @@ class Entity:
         if amount:
             if callable(amount):
                 resource.distribute(self, amount())
-                self.ocupied_resources.append(resource)
+                if resource not in self.ocupied_resources:
+                    self.ocupied_resources.append(resource)
             else:
                 resource.distribute(self, amount)
-                self.ocupied_resources.append(resource)
+                if resource not in self.ocupied_resources:
+                    self.ocupied_resources.append(resource)
         else:
             resource.distribute(self, resource.amount)
 
@@ -495,7 +497,8 @@ class EntityList(list):
             Entity: return the poped entity.
         """
         __object: Entity = super().pop(__index)
-        __object.registered_lists.remove(self)
+        if self in __object.registered_lists:
+            __object.registered_lists.remove(self)
         logger.debug(
             f"Entity {__object.label} is poped from {self.label if self.label else self} at {__index}."
         )
@@ -504,7 +507,8 @@ class EntityList(list):
     def clear(self) -> None:
         """Clear the list."""
         for item in self:
-            item.registered_lists.remove(self)
+            if self in item.registered_lists:
+                item.registered_lists.remove(self)
         super().clear()
         logger.debug(f"{self.label if self.label else self} is cleared.")
 
