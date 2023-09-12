@@ -151,19 +151,20 @@ class Entity:
             logger.debug(f"Entity {self.label} terminated at {Mundus.now}")
             for entity in self._followers:
                 entity.create(Mundus.now)
-            
+        
+        # check if a earlier termination is scheduled
         if self._terminate_at > at:
             self._terminate_at = at
             
-            if self._termination is not None:
-                self._termination.cancel()
+        if self._termination is not None:
+            self._termination.cancel()
 
-            self._termination = InstantEvent(
-                at=self.terminate_at,
-                action=_terminate,
-                label=f"Termination of {self.label}",
-                priority=-2,
-            )
+        self._termination = InstantEvent(
+            at=self.terminate_at,
+            action=_terminate,
+            label=f"Termination of {self.label}",
+            priority=-2,
+        )
 
     @abstractmethod
     def on_termination(self):
@@ -171,13 +172,13 @@ class Entity:
         pass
     
     def destory(self, at: int | float) -> None:
-        """The Destruction of the entity. This will release all occupied resource, remove the entity from all entity lists, and cancel all unfinished events."""
+        """The Destruction of the entity. This will release all occupied resource, remove the entity from all entity lists, and cancel all unfinished events. This will not trigger the creation of followers."""
 
         if self.terminated:
             logger.warning(f"Entity {self.label} is already terminated.")
             return
 
-        def _terminate():
+        def _destroy():
             self._terminated_at = Mundus.now
             self._state.append(State.TERMINATED)
             self.release_resources()
@@ -191,7 +192,7 @@ class Entity:
 
         self._destruction = InstantEvent(
             at=self.terminate_at if self.terminate_at < at else at,
-            action=_terminate,
+            action=_destroy,
             label=f"Destruction of {self.label}",
             priority=-2,
         )

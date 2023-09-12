@@ -28,7 +28,7 @@ test_entity_3 = TestEntity(
     precursor=[test_entity_1, test_entity_2],
 )
 
-test_entity_1.destory(5)
+test_entity_1.terminate(5)
 test_entity_1.create(2)
 
 Mundus.set_logger(logging.DEBUG)
