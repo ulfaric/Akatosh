@@ -246,11 +246,11 @@ class Entity:
                 if self not in resource.users:
                     self.ocupied_resources.remove(resource)
             else:
-                resource.put(amount)
+                resource.collect(self, amount)
                 if self not in resource.users:
                     self.ocupied_resources.remove(resource)
         else:
-            resource.put(resource.amount)
+            resource.collect(self)
 
     def release_resources(self):
         """Release all occupied resources."""
