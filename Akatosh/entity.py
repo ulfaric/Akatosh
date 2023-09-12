@@ -444,6 +444,7 @@ class EntityList(list):
         """
         super().__init__(item for item in iterable if isinstance(item, Entity))
         self._label = label
+        self._id = uuid4().int
 
     def insert(self, __index: int, __object: Entity) -> None:
         """Insert an entity to the list.
@@ -527,8 +528,19 @@ class EntityList(list):
         logger.debug(
             f"{self.label if self.label else self} is extended with {__iterable}."
         )
+        
+    def __eq__(self, __value: EntityList) -> bool:
+        if self.id == __value.id:
+            return True
+        else:
+            return False
 
     @property
     def label(self):
         """Return the label of the entity list."""
         return self._label
+
+    @property
+    def id(self):
+        """Return the id of the entity list."""
+        return self._id
