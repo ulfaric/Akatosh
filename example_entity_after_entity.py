@@ -28,7 +28,7 @@ test_entity_3 = TestEntity(
     precursor=[test_entity_1, test_entity_2],
 )
 
-test_entity_1.terminate(8)
+test_entity_1.terminate(5)
 test_entity_1.create(2)
 test_entity_2.terminate(7)
 

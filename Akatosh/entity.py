@@ -128,6 +128,8 @@ class Entity:
                     )
                     if self.to_be_terminated_at != inf:
                         self.terminate(self.to_be_terminated_at)
+                else:
+                    logger.debug(f"Entity {self.label} is not created due to unfinished precursors.")
             # no precursor, create the entity
             else:
                 self._creation = InstantEvent(
@@ -169,11 +171,20 @@ class Entity:
                 entity.create(Mundus.now)
         
         # check if a later termination is scheduled
-        if self._to_be_terminated_at > at:
-            self._to_be_terminated_at = at
+        # if self._to_be_terminated_at > at:
+        #     self._to_be_terminated_at = at
             
+        # if self._termination is not None:
+        #     self._termination.cancel()
         if self._termination is not None:
-            self._termination.cancel()
+            if self._termination.at > at:
+                self._termination.cancel()
+                self._to_be_terminated_at = at
+            else:
+                logger.debug(f"Entity {self.label} is already scheduled to be terminated at {self._termination.at}.")
+                return
+        else:
+            self._to_be_terminated_at = at
 
         self._termination = InstantEvent(
             at=self.to_be_terminated_at,
@@ -206,11 +217,23 @@ class Entity:
             self.on_destruction()
             logger.debug(f"Entity {self.label} destoried at {Mundus.now}")
 
-        if self._destruction is not None:
-            self._destruction.cancel()
+        # if self._destruction is not None:
+        #     self._destruction.cancel()
             
-        if self._termination is not None and self.to_be_terminated_at < at:
-            return
+        # if self._termination is not None and self.to_be_terminated_at < at:
+        #     return
+        
+        if self._termination is not None:
+            if self._termination.at < at:
+                logger.debug(f"Entity {self.label} is already scheduled to be terminated at {self._termination.at}, so this destruction is ignored")
+                return
+        
+        if self._destruction is not None:
+            if self._destruction.at < at:
+                logger.debug(f"Entity {self.label} is already scheduled to be destoried at {self._destruction.at}, so this destruction is ignored")
+                return
+        else:
+            self._to_be_destoried = at
 
         self._destruction = InstantEvent(
             at=self.to_be_terminated_at if self.to_be_terminated_at < at else at,
@@ -438,6 +461,16 @@ class Entity:
     def terminated_at(self):
         """Return the time when the entity is terminated."""
         return self._terminated_at
+
+    @property
+    def destoried_at(self):
+        """Return the time when the entity is destoried."""
+        return self._destoried_at
+    
+    @property
+    def to_be_destoried_at(self):
+        """Return the time when the entity should be destoried."""
+        return self._to_be_destoried
 
     @property
     def ocupied_resources(self):
