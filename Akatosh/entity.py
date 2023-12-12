@@ -61,25 +61,28 @@ class Entity:
         # assign create_at and terminate_at
         if create_at is not None:
             if callable(create_at):
-                self._create_at = round(create_at(), Mundus.resolution)
+                self._to_be_created_at = round(create_at(), Mundus.resolution)
             else:
-                self._create_at = round(create_at, Mundus.resolution)
+                self._to_be_created_at = round(create_at, Mundus.resolution)
         else:
-            self._create_at = 0
+            self._to_be_created_at = 0
         self._created_at = float()
 
         if terminate_at is not None:
             if callable(terminate_at):
-                self._terminate_at = round(terminate_at(), Mundus.resolution)
+                self._to_be_terminated_at = round(terminate_at(), Mundus.resolution)
             else:
-                self._terminate_at = round(terminate_at, Mundus.resolution)
+                self._to_be_terminated_at = round(terminate_at, Mundus.resolution)
         else:
-            self._terminate_at = inf
+            self._to_be_terminated_at = inf
         self._terminated_at = float()
+        
+        self._to_be_destoried = float()
+        self._destoried_at = float()
 
         # create the entity if no precursor
         if create_at is not None and len(self.precursor) == 0:
-            self.create(self.create_at)
+            self.create(self.to_be_created_at)
 
     def create(self, at: int | float, force=False) -> None:
         """The creation of the entity."""
@@ -88,8 +91,8 @@ class Entity:
             return
 
         # check if the entity is already over due
-        if at > self.terminate_at:
-            logger.debug(f"Entity {self.label} passed due time.")
+        if self.terminated or self.destroied:
+            logger.debug(f"Entity {self.label} is already terminated or destoried.")
             return
 
         # call back function for creation
@@ -100,38 +103,41 @@ class Entity:
             self._state.append(State.CREATED)
             self.on_creation()
             logger.debug(f"Entity {self.label} created at {at}")
+            
+        self._to_be_created_at = max([at, self.to_be_created_at])
 
         # force creation if force is True, regardless of the precursor and the time
         if force:
             self._creation = InstantEvent(
-                at=self.create_at if self.create_at > at else at,
+                at=self.to_be_created_at,
                 action=_create,
                 label=f"Creation of {self.label}",
                 priority=-2,
             )
-            self.terminate(self.terminate_at)
+            if self.to_be_terminated_at != inf:
+                self.terminate(self.to_be_terminated_at)
         else:
             # check if all precursors are terminated, if so, create the entity
             if len(self.precursor) != 0:
                 if all(p.terminated for p in self.precursor):
                     self._creation = InstantEvent(
-                        at=self.create_at if self.create_at > at else at,
+                        at=self.to_be_created_at,
                         action=_create,
                         label=f"Creation of {self.label}",
                         priority=-2,
                     )
-                    if self.terminate_at != inf:
-                        self.terminate(self.terminate_at)
+                    if self.to_be_terminated_at != inf:
+                        self.terminate(self.to_be_terminated_at)
             # no precursor, create the entity
             else:
                 self._creation = InstantEvent(
-                    at=self.create_at if self.create_at > at else at,
+                    at=self.to_be_created_at,
                     action=_create,
                     label=f"Creation of {self.label}",
                     priority=-2,
                 )
-                if self.terminate_at != inf:
-                    self.terminate(self.terminate_at)
+                if self.to_be_terminated_at != inf:
+                    self.terminate(self.to_be_terminated_at)
 
     @abstractmethod
     def on_creation(self):
@@ -141,12 +147,16 @@ class Entity:
     def terminate(self, at: int | float) -> None:
         """The termination of the entity. This will release all occupied resource, remove the entity from all entity lists, and cancel all unfinished events."""
 
-        if self.terminated:
-            logger.warning(f"Entity {self.label} is already terminated.")
+        if self.terminated or self.destroied:
+            logger.warning(f"Entity {self.label} is already terminated or destoried.")
             return
 
         def _terminate():
-            if self.terminated:
+            if self.terminated or self.destroied:
+                return
+            if not self.created:
+                logger.warning(f"Entity {self.label} is not created yet, so considered destoried.")
+                self.destory(Mundus.now)
                 return
             self._terminated_at = Mundus.now
             self._state.append(State.TERMINATED)
@@ -159,14 +169,14 @@ class Entity:
                 entity.create(Mundus.now)
         
         # check if a later termination is scheduled
-        if self._terminate_at > at:
-            self._terminate_at = at
+        if self._to_be_terminated_at > at:
+            self._to_be_terminated_at = at
             
         if self._termination is not None:
             self._termination.cancel()
 
         self._termination = InstantEvent(
-            at=self.terminate_at,
+            at=self.to_be_terminated_at,
             action=_terminate,
             label=f"Termination of {self.label}",
             priority=-2,
@@ -199,11 +209,11 @@ class Entity:
         if self._destruction is not None:
             self._destruction.cancel()
             
-        if self._termination is not None and self.terminate_at < at:
+        if self._termination is not None and self.to_be_terminated_at < at:
             return
 
         self._destruction = InstantEvent(
-            at=self.terminate_at if self.terminate_at < at else at,
+            at=self.to_be_terminated_at if self.to_be_terminated_at < at else at,
             action=_destroy,
             label=f"Destruction of {self.label}",
             priority=-2,
@@ -400,9 +410,9 @@ class Entity:
         return State.CREATED in self.state
 
     @property
-    def create_at(self):
+    def to_be_created_at(self):
         """Return the time when the entity should be created."""
-        return self._create_at
+        return self._to_be_created_at
 
     @property
     def created_at(self):
@@ -420,9 +430,9 @@ class Entity:
         return State.DESTROIED in self.state
 
     @property
-    def terminate_at(self):
+    def to_be_terminated_at(self):
         """Return the time when the entity should be terminated."""
-        return self._terminate_at
+        return self._to_be_terminated_at
 
     @property
     def terminated_at(self):
