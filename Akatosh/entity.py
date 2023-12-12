@@ -94,6 +94,8 @@ class Entity:
 
         # call back function for creation
         def _create():
+            if self.created:
+                return
             self._created_at = Mundus.now
             self._state.append(State.CREATED)
             self.on_creation()
@@ -118,7 +120,8 @@ class Entity:
                         label=f"Creation of {self.label}",
                         priority=-2,
                     )
-                    self.terminate(self.terminate_at)
+                    if self.terminate_at != inf:
+                        self.terminate(self.terminate_at)
             # no precursor, create the entity
             else:
                 self._creation = InstantEvent(
@@ -127,7 +130,8 @@ class Entity:
                     label=f"Creation of {self.label}",
                     priority=-2,
                 )
-                self.terminate(self.terminate_at)
+                if self.terminate_at != inf:
+                    self.terminate(self.terminate_at)
 
     @abstractmethod
     def on_creation(self):
@@ -142,6 +146,8 @@ class Entity:
             return
 
         def _terminate():
+            if self.terminated:
+                return
             self._terminated_at = Mundus.now
             self._state.append(State.TERMINATED)
             self.release_resources()
@@ -152,7 +158,7 @@ class Entity:
             for entity in self._followers:
                 entity.create(Mundus.now)
         
-        # check if a earlier termination is scheduled
+        # check if a later termination is scheduled
         if self._terminate_at > at:
             self._terminate_at = at
             
@@ -174,13 +180,16 @@ class Entity:
     def destory(self, at: int | float) -> None:
         """The Destruction of the entity. This will release all occupied resource, remove the entity from all entity lists, and cancel all unfinished events. This will not trigger the creation of followers."""
 
-        if self.terminated:
-            logger.warning(f"Entity {self.label} is already terminated.")
+        if self.terminated or self.destroied:
+            logger.warning(f"Entity {self.label} is already destroied.")
             return
 
         def _destroy():
+            if self.terminated or self.destroied:
+                return
             self._terminated_at = Mundus.now
             self._state.append(State.TERMINATED)
+            self._state.append(State.DESTROIED)
             self.release_resources()
             self.unregister_from_lists()
             self.cancel_unfinished_events()
@@ -189,6 +198,9 @@ class Entity:
 
         if self._destruction is not None:
             self._destruction.cancel()
+            
+        if self._termination is not None and self.terminate_at < at:
+            return
 
         self._destruction = InstantEvent(
             at=self.terminate_at if self.terminate_at < at else at,
@@ -400,7 +412,12 @@ class Entity:
     @property
     def terminated(self):
         """Return True if the entity is terminated."""
-        return State.TERMINATED in self.state
+        return State.TERMINATED in self.state and State.DESTROIED not in self.state
+    
+    @property
+    def destroied(self):
+        """Return True if the entity is destoried."""
+        return State.DESTROIED in self.state
 
     @property
     def terminate_at(self):
@@ -488,7 +505,7 @@ class EntityList(list):
             f"Entity {__object.label} is removed from {self.label if self.label else self}."
         )
 
-    def pop(self, __index: int = ...) -> Entity:
+    def pop(self, __index: int = None) -> Entity: # type: ignore
         """Pop an entity from the list.
 
         Args:

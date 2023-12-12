@@ -8,3 +8,4 @@ class State(str, enum.Enum):
     CANCELED = "CANCELED"
     CREATED = "CREATED"
     TERMINATED = "TERMINATED"
+    DESTROIED = "DESTROIED"
