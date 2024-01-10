@@ -162,26 +162,22 @@ class Resource:
             if len(usage_records) == 0:
                 return 1 - (self.amount / self.capacity)
             else:
-                if usage_records[-1][0] - after == 0:
-                    return 1 - (usage_records[-1][1] / self.capacity)
+                usage_records.sort(key=lambda x: x[0])
+                weighted_overall_amount = 0
+                for index, record in enumerate(usage_records):
+                    if index == 0:
+                        weighted_overall_amount += record[1] * (record[0] - after)
+                    else:
+                        weighted_overall_amount += record[1] * (
+                            record[0] - usage_records[index - 1][0]
+                        )
+                weighted_overall_amount += self.amount * (
+                    Mundus.now - usage_records[-1][0]
+                )
+                if callable(duration):
+                    return 1 - (weighted_overall_amount / (self.capacity * duration()))
                 else:
-                    weighted_overall_amount = 0
-                    for index, record in enumerate(usage_records):
-                        if index == 0:
-                            weighted_overall_amount += record[1] * (record[0] - after)
-                        elif index == len(usage_records) - 1:
-                            weighted_overall_amount += record[1] * (
-                                Mundus.now - usage_records[index - 1][0]
-                            )
-                        else:
-                            weighted_overall_amount += record[1] * (
-                                record[0] - usage_records[index - 1][0]
-                            )
-                    return (
-                        1
-                        - (weighted_overall_amount / (usage_records[-1][0] - after))
-                        / self.capacity
-                    )
+                    return 1 - (weighted_overall_amount / (self.capacity * duration))
         else:
             return 1 - (self.amount / self.capacity)
 
