@@ -170,12 +170,6 @@ class Entity:
             for entity in self._followers:
                 entity.create(Mundus.now)
         
-        # check if a later termination is scheduled
-        # if self._to_be_terminated_at > at:
-        #     self._to_be_terminated_at = at
-            
-        # if self._termination is not None:
-        #     self._termination.cancel()
         if self._termination is not None:
             if self._termination.at > at:
                 self._termination.cancel()
@@ -217,11 +211,6 @@ class Entity:
             self.on_destruction()
             logger.debug(f"Entity {self.label} destoried at {Mundus.now}")
 
-        # if self._destruction is not None:
-        #     self._destruction.cancel()
-            
-        # if self._termination is not None and self.to_be_terminated_at < at:
-        #     return
         
         if self._termination is not None:
             if self._termination.at < at:
