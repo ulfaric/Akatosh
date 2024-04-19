@@ -2,26 +2,14 @@ site_name: Akatosh
 
 nav:
   - overview: index.md
-  - Examples:
-      - Instant Event: examples/instant_event.md
-      - Continuous Event: examples/continuous_event.md
-      - Event Priority: examples/event_priority.md
-      - Pause Event: examples/pause_event.md
-      - Cancel Event: examples/cancel_event.md
-      - Create Event within Event: examples/create_event_within_event.md
-      - Event After Another Event: examples/event_wait_event.md
-      - Resource: examples/resource.md
-      - Entity: examples/entity.md
-      - Entity, Events and EntityList: examples/entity_events_entitylist.md
-      - Entity after another Entity: examples/entity_after_entity.md
+  - Guides:
+      - Event: guides/event.md
+      - Entity: guides/entity.md
   - API Reference:
       - Universe: api/universe.md
       - Event:  api/event.md
-      - InstantEvent: api/instant_event.md
-      - ContinuousEvent: api/continuous_event.md
       - Resource: api/resource.md
       - Entity: api/entity.md
-      - EntityList: api/entity_list.md
 
 
 

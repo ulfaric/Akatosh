@@ -16,6 +16,19 @@ class Event:
         once: bool = False,
         priority: int = 0,
     ) -> None:
+        """Create an event which happens at a certain time and ends at a certain time.
+
+        Args:
+            at (float | Event): when the event should start.
+            till (float | Event): when the event should end.
+            action (Callable): what happens during the event.
+            label (Optional[str], optional): Short description for the event. Defaults to None.
+            once (bool, optional): whether this event should only happen once, regardless of at or till. Defaults to False.
+            priority (int, optional): the priority of the event, event with lower value will happen before the events with a higher priority value. Defaults to 0.
+
+        Raises:
+            ValueError: _description_
+        """
         if universe.time >= at:
             raise ValueError(f"Event can only be scheduled for the future.")
         self._at = at
@@ -33,6 +46,7 @@ class Event:
             universe._max_event_priority = self.priority
 
     async def __call__(self) -> Any:
+        """Make the event callable, so it can be awaited like a coroutine."""
         while True:
 
             if self.ended == True:
@@ -81,52 +95,64 @@ class Event:
             await universe.time_flow
 
     def __str__(self) -> str:
+        """Return the label of the event if it has one, otherwise return the id of the event."""
         if self.label is None:
             return f"Event {id(self)}"
         return self.label
 
     def cancel(self):
+        """Cancel the event."""
         self._ended = True
         logger.debug(f"Event {self} cancelled.")
 
     def pause(self):
+        """Pause the event."""
         self._paused = True
         logger.debug(f"Event {self} paused.")
 
     def resume(self):
+        """Resume the event."""
         self._paused = False
         logger.debug(f"Event {self} resumed.")
 
     @property
     def at(self):
+        """Return the time when the event should start."""
         return self._at
 
     @property
     def till(self):
+        """Return the time when the event should end."""
         return self._till
 
     @property
     def started(self):
+        """Return whether the event has started or not."""
         return self._started
 
     @property
     def ended(self):
+        """Return whether the event has ended or not."""
         return self._ended
 
     @property
     def paused(self):
+        """Return whether the event is paused or not."""
         return self._paused
 
     @property
     def label(self):
+        """Return the label of the event."""
         return self._label
 
     @property
     def once(self):
+        """Return whether the event should only happen once or not."""
         return self._once
 
     @property
     def priority(self):
+        """Return the priority of the event."""
         return self._priority
 
 
