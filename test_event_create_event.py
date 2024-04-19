@@ -1,8 +1,3 @@
-# Create event within a event
-
-The following codes demenstrate how to create a event within a event. Please note that the new event must be created after the current event.
-
-```py
 from Akatosh.event import event
 from Akatosh.universe import universe
 
@@ -14,6 +9,6 @@ def hello():
     def world():
         print("World")
     
+
 universe.set_time_resolution(1)
 universe.simulate(1)
-```

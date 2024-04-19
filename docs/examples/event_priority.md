@@ -1,20 +1,20 @@
+# Event Priority
+
+The following codes create two events at the same time, but the event2 has a higher value as priority. Hence, the event1 happens first and "Hello World" will be printed.
+
 ```py
-import logging
+from Akatosh.event import event
+from Akatosh.universe import universe
 
-from Akatosh import event, Mundus
+    
+@event(1,1, "Event 2", once=True, priority=2)
+def event2():
+    print("World")
+    
+@event(1,1, "Event 1", once=True, priority=1)
+def event1():
+    print("Hello")
 
-# create a event with priority 2
-@event(at=0, priority=2, label="AuPost")
-def au_post():
-    print(f"{Mundus.now}:\tAuPost deliver!")
-
-# create a event with priority 1
-@event(at=0, priority=1, label="StarTrek")
-def star_trek():
-    print(f"{Mundus.now}:\tStar Trek deliver!")
-
-
-Mundus.set_logger(logging.DEBUG)
-Mundus.simulate()
-# the Star Trek will deliver first, AuPost sucks!
+universe.set_time_resolution(0)
+universe.simulate(2)
 ```

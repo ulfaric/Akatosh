@@ -1,8 +1,3 @@
-# Event after another Event
-
-The following code print "hello world" at 0.5s by two events. The order of the word is ensured by let the world event wait for hello event.
-
-```py
 from Akatosh.event import Event
 from Akatosh.universe import universe
 
@@ -11,4 +6,3 @@ world = Event(hello, 0.5, lambda: print("World"))
 
 universe.set_time_resolution(1)
 universe.simulate(1)
-```

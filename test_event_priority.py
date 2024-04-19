@@ -10,5 +10,5 @@ def event2():
 def event1():
     print("Hello")
 
-universe.enable_realtime(0)    
+universe.set_time_resolution(0)
 universe.simulate(2)

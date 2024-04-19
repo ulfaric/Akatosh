@@ -46,7 +46,7 @@ class Universe:
                     start_time = time.time()
                     # iterate through all event priorities
                     self._current_event_priority = 0
-                    while self.current_event_priority < self._max_event_priority:
+                    while self.current_event_priority <= self._max_event_priority:
                         logger.debug(f"Current Event Priority: {self.current_event_priority}")
                         await asyncio.sleep(0)
                         self._current_event_priority += 1
@@ -60,7 +60,7 @@ class Universe:
                 else:
                     # iterate through all event priorities
                     self._current_event_priority = 0
-                    while self.current_event_priority < self._max_event_priority:
+                    while self.current_event_priority <= self._max_event_priority:
                         logger.debug(f"Current Event Priority: {self.current_event_priority}")
                         await asyncio.sleep(0)
                         self._current_event_priority += 1
@@ -86,6 +86,13 @@ class Universe:
     def set_logging_level(self, level: int = logging.DEBUG):
         logger.setLevel(level)
 
+    def set_time_resolution(self, resolution: int):
+        if resolution < 0:
+            raise ValueError("Time resolution cannot be less than 0.")
+        self.time_resolution = resolution
+        self._time_step = 1 / pow(10, self.time_resolution)
+        self._time = round(0.0 - self.time_step, self.time_resolution)
+        
     @property
     def time(self):
         return self._time

@@ -13,7 +13,13 @@ if TYPE_CHECKING:
 
 class Entity:
 
-    def __init__(self, at: float | Event, till: float | Event, label: Optional[str] = None, priority:int = 1) -> None:
+    def __init__(
+        self,
+        at: float | Event,
+        till: float | Event,
+        label: Optional[str] = None,
+        priority: int = 0,
+    ) -> None:
         self._label = label
         self._at = at
         self._till = till
@@ -22,8 +28,17 @@ class Entity:
         self._priority = priority
 
         # create an instant creation event
-        self._creation = Event(at, inf, self._create, f"{self} Creation", once=True, priority=self.priority)
-        self._termination = Event(till, inf, self._terminate, f"{self} Termination", once=True, priority=self.priority)
+        self._creation = Event(
+            at, inf, self._create, f"{self} Creation", once=True, priority=self.priority
+        )
+        self._termination = Event(
+            till,
+            inf,
+            self._terminate,
+            f"{self} Termination",
+            once=True,
+            priority=self.priority,
+        )
 
         # create a queue for engaged events
         self._events: List[Event] = list()
@@ -33,12 +48,12 @@ class Entity:
 
     def __str__(self) -> str:
         if self.label is None:
-            return f"Entity\t{id(self)}"
+            return f"Entity {id(self)}"
         return self.label
 
     def _create(self):
         self._created = True
-        logger.debug(f"Entity\t{self}\tcreated.")
+        logger.debug(f"Entity {self} created.")
 
     def _terminate(self):
         self._terminated = True
@@ -46,37 +61,46 @@ class Entity:
             event.cancel()
         for resource in self.occupied_resources:
             resource.collect(self, inf)
-        logger.debug(f"Entity\t{self}\tterminated.")
+        logger.debug(f"Entity {self} terminated.")
 
-    def event(self, at: float | Event, till: float | Event, label: Optional[str] = None, once: bool = False, priority: int = 1):
+    def event(
+        self,
+        at: float | Event,
+        till: float | Event,
+        label: Optional[str] = None,
+        once: bool = False,
+        priority: int = 0,
+    ):
 
         def _event(action: Callable):
 
             async def __event():
-                
+
                 if self.terminated:
-                    logger.warn(f"Entity\t{self}\talready terminated.")
+                    logger.warn(f"Entity {self} already terminated.")
                     return
 
                 while True:
                     if not self.created:
-                        logger.warn(f"Entity\t{self}\tnot created yet.")
+                        logger.warn(f"Entity {self} not created yet.")
                         await universe.time_flow
                     else:
                         break
 
                 event = Event(at, till, action, label, once, priority)
                 self.events.append(event)
-                logger.debug(f"Event\t{event}\tadded to entity\t{self}.")
+                logger.debug(f"Event {event} added to entity {self}.")
 
-            Event(at, at, __event, f"{label}\tEngagement", True)
+            Event(at, at, __event, f"{label} Engagement", True)
 
         return _event
 
     def acquire(self, resource: Resource, amount: float) -> bool:
         if resource.distribute(self, amount):
             self.occupied_resources.append(resource)
-            logger.debug(f"Entity\t{self}\tacquired\t{amount}\tof resource\t{resource}.")
+            logger.debug(
+                f"Entity {self} acquired {amount} of resource {resource}."
+            )
             return True
         else:
             return False
@@ -84,7 +108,9 @@ class Entity:
     def release(self, resource: Resource, amount: float) -> bool:
         if resource.collect(self, amount):
             self.occupied_resources.remove(resource)
-            logger.debug(f"Entity\t{self}\treleased\t{amount}\tof resource\t{resource}.")
+            logger.debug(
+                f"Entity {self} released {amount} of resource {resource}."
+            )
             return True
         else:
             return False
@@ -112,3 +138,11 @@ class Entity:
     @property
     def priority(self):
         return self._priority
+
+    @property
+    def creation(self):
+        return self._creation
+
+    @property
+    def termination(self):
+        return self._termination
