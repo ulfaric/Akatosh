@@ -1,6 +1,6 @@
 import logging
 from Akatosh.entity import Entity
-from Akatosh.event import Event
+from Akatosh.event import Event, event
 from Akatosh.resource import Resource
 from Akatosh.universe import universe
 

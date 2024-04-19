@@ -13,12 +13,13 @@ if TYPE_CHECKING:
 
 class Entity:
 
-    def __init__(self, at: float | Event, till: float | Event, label: Optional[str] = None) -> None:
+    def __init__(self, at: float | Event, till: float | Event, label: Optional[str] = None, priority:int = 1) -> None:
         self._label = label
         self._at = at
         self._till = till
         self._created = False
         self._terminated = False
+        self._priority = priority
 
         # create an instant creation event
         self._creation = Event(at, inf, self._create, f"{self} Creation", once=True)
@@ -47,7 +48,7 @@ class Entity:
             resource.collect(self, inf)
         logger.debug(f"Entity\t{self}\tterminated.")
 
-    def event(self, at: float | Event, till: float | Event, label: Optional[str] = None):
+    def event(self, at: float | Event, till: float | Event, label: Optional[str] = None, once: bool = False, priority: int = 1):
 
         def _event(action: Callable):
 
@@ -64,11 +65,11 @@ class Entity:
                     else:
                         break
 
-                event = Event(at, till, action, label)
+                event = Event(at, till, action, label, once, priority)
                 self.events.append(event)
                 logger.debug(f"Event\t{event}\tadded to entity\t{self}.")
 
-            Event(at, at, __event, f"{label}\tEngagement")
+            Event(at, at, __event, f"{label}\tEngagement", True)
 
         return _event
 
@@ -107,3 +108,7 @@ class Entity:
     @property
     def occupied_resources(self):
         return self._occupied_resources
+
+    @property
+    def priority(self):
+        return self._priority

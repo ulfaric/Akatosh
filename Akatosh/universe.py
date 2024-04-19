@@ -24,7 +24,8 @@ class Universe:
         self._time_step = round(1 / pow(10, self.time_resolution), self.time_resolution)
         self._time = round(0.0 - self.time_step, self.time_resolution)
         self._realtime = False
-
+        self._current_event_priority = 0
+        self._max_event_priority = 0
         self._pending_events: List[Event] = list()
 
     def simulate(self, till: float):
@@ -43,6 +44,13 @@ class Universe:
                 self.pending_events.clear()
                 if self.realtime:
                     start_time = time.time()
+                    # iterate through all event priorities
+                    self._current_event_priority = 0
+                    while self.current_event_priority < self._max_event_priority:
+                        logger.debug(f"Current Event Priority: {self.current_event_priority}")
+                        await asyncio.sleep(0)
+                        self._current_event_priority += 1
+                    # wait for the time step
                     await universe.time_flow
                     end_time = time.time()
                     if end_time - start_time > self.time_step:
@@ -50,7 +58,15 @@ class Universe:
                             f"Simulation time step exceeded real time by {round(((end_time - start_time - self.time_step)/self.time_step)*100,2)}%."
                         )
                 else:
+                    # iterate through all event priorities
+                    self._current_event_priority = 0
+                    while self.current_event_priority < self._max_event_priority:
+                        logger.debug(f"Current Event Priority: {self.current_event_priority}")
+                        await asyncio.sleep(0)
+                        self._current_event_priority += 1
+                    # wait for the time step
                     await universe.time_flow
+                    
             simulation_end_time = time.time()
             if self.realtime:
                 logger.info(
@@ -76,10 +92,10 @@ class Universe:
 
     @property
     def time_resolution(self):
-        if self._time_resolution <0:
+        if self._time_resolution < 0:
             raise ValueError("Time resolution cannot be less than 0.")
         return self._time_resolution
-    
+
     @time_resolution.setter
     def time_resolution(self, value: int):
         if value < 0:
@@ -106,6 +122,14 @@ class Universe:
             await asyncio.sleep(self.time_step)
         else:
             await asyncio.sleep(0)
+
+    @property
+    def current_event_priority(self):
+        return self._current_event_priority
+    
+    @property
+    def max_event_priority(self):
+        return self._max_event_priority
 
 
 universe = Universe()

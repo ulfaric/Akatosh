@@ -1,5 +1,6 @@
 from __future__ import annotations
 import asyncio
+from re import T
 from typing import Any, Callable, Optional
 from . import logger
 from .universe import universe
@@ -14,6 +15,7 @@ class Event:
         action: Callable,
         label: Optional[str] = None,
         once: bool = False,
+        priority: int = 1,
     ) -> None:
         self._at = at
         self._till = till
@@ -23,19 +25,22 @@ class Event:
         self._ended = False
         self._label = label
         self._once = once
+        self._priority = priority
         universe.pending_events.append(self)
+        if self.priority>universe.max_event_priority:
+            universe._max_event_priority = self.priority
 
     async def __call__(self) -> Any:
         while True:
 
+            while True:
+                if self.priority >= universe.current_event_priority:
+                    break
+                await asyncio.sleep(0)
+
             if self.ended == True:
                 return
 
-            # if self.started == False and self.ended == False:
-            #     if self.at <= universe.time:
-            #         self._started = True
-            #         logger.debug(f"Event {self} started.")
-                    
             if self.started == False:
                 if isinstance(self.at, Event):
                     if self.at.ended == True:
@@ -69,12 +74,6 @@ class Event:
                         self._ended = True
                         logger.debug(f"Event\t{self}\tended.")
                         return
-                    
-            # if self.ended == False:
-            #     if self.till <= universe.time:
-            #         self._ended = True
-            #         logger.debug(f"Event {self} ended.")
-            #         return
 
             await universe.time_flow
 
@@ -107,9 +106,23 @@ class Event:
     def label(self):
         return self._label
 
+    @property
+    def once(self):
+        return self._once
 
-def event(at: float | Event, till: float | Event, label: Optional[str] = None, once: bool = False):
+    @property
+    def priority(self):
+        return self._priority
+
+
+def event(
+    at: float | Event,
+    till: float | Event,
+    label: Optional[str] = None,
+    once: bool = False,
+    priority: int = 1,
+):
     def _event(action: Callable) -> Event:
-        return Event(at, till, action, label, once)
+        return Event(at, till, action, label, once, priority)
 
     return _event
