@@ -1,42 +1,43 @@
-#Akatosh
+# Akatosh
 
-<p style="text-align: justify;">
-<code>Akatosh</code> is a light-weighted disceret event simulation library. Unlike popular library <code>Simpy</code> which is progress-oriented and you have to write generator function for simulated events or events interaction, `Akatosh` is fully object-oriented that events are encapsulated as `InstantEvent`/`ContinousEvent` with states, priority and a life-cycle. The actual impact of events are simply regular python functions. You could create events all at once, or create event within event. In addition, `Akatosh` is async which means event that are happening at the same simulated time will be executed simultaneously for real, unless they have different priority.
-</p>
+`Akatosh` is a light-weighted disceret event simulation library. Unlike popular library `Simpy` which is progress-oriented and you have to write generator function for simulated events or events interaction, `Akatosh` is fully object-oriented that events are encapsulated as `InstantEvent`/`ContinousEvent` with states, priority and a life-cycle. The actual impact of events are simply regular python functions. You could create events all at once, or create event within event. In addition, `Akatosh` is async which means event that are happening at the same simulated time will be executed simultaneously for real, unless they have different priority.
 
-<p style="text-align: justify;">
-<code>Akatosh</code> also support <code>Resource</code>, provide all functionalities as it is in <code>Simpy</code> with extra utilities for telemetries collection and interaction with <code>Entity</code>. The <code>Entity</code> is unique to <code>Akatosh</code> which represents a abstract entity with a life-cycle, for example a follower. The <code>Entity</code> supports utility functions to interact with `Resource` and automatically releases all its occupied resources upon termination.
-</p>
+`Akatosh` also support `Resource`, provide all functionalities as it is in `Simpy` with extra utilities for telemetries collection and interaction with `Entity`. The `Entity` is unique to `Akatosh` which represents a abstract entity with a life-cycle, for example a follower. The `Entity` supports utility functions to interact with `Resource` and automatically releases all its occupied resources upon termination.
 
-<p style="text-align: justify;">
-You probably already noticed that <code>Akatosh</code> is the name of "Dragon God of Time" in elder scroll serie, therefore the singleton class <code>Mundus</code> is the core of the simulation. The <code>Mundus</code> will schedule the events, move forward time and engage async execution.
-</p>
+You probably already noticed that `Akatosh` is the name of "Dragon God of Time" in elder scroll serie, therefore the singleton class `Mundus` is the core of the simulation. The `Mundus` will schedule the events, move forward time and engage async execution.
 
 To use `Akatosh`:
-```
+
+```bash
 pip install -U Akatosh
 ```
 
 A basic example is showing below, for more information please look at *Examples* and *API Reference*, full documentation is available at https://ulfaric.github.io/Akatosh/.
 
 ```py
-import logging
+from Akatosh.universe import universe
+from Akatosh.resource import Resource
+from Akatosh.entity import Entity
+from Akatosh.event import Event
 
-from Akatosh import event, Mundus
+# create a resource with capacity of 100 and current level 50
+res = Resource(100.0, 50.0)
 
-# create two instant event at simulation time 1.0 and 5.0
-@event(at=5)
-def hellow_world_again():
-    print(f"{Mundus.now}:\tHello World! Again!")
+# create a instance event happens at 0.9s
+lock = Event(0.9,0.9, lambda: print("Unlocked!"))
+
+# indicate a user entity should be created after lock event ended, wait till 1.1s.
+user = Entity(lock, 1.1, "User")
+
+# indicate user entity engage a event at 1.2s
+@user.event(1.2,1.2, "Use Resource")
+def user_event():
+    if res.distribute(user, 1):
+        print(res.level)
+    else:
+        print("Not enough resource")
 
 
-@event(at=1)
-def hellow_world():
-    print(f"{Mundus.now}:\tHello World!")
-
-# enable debug message
-Mundus.set_logger(logging.DEBUG)
-
-# run simulation for 6s
-Mundus.simulate(6)
+# run simulation for 1.2s
+universe.simulate(1.2)
 ```
