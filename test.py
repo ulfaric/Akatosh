@@ -1,16 +1,15 @@
-import asyncio
-from math import inf
-from Akatosh.universe import universe
-from Akatosh.resource import Resource
+import logging
 from Akatosh.entity import Entity
-from Akatosh.event import event, Event
+from Akatosh.event import Event
+from Akatosh.resource import Resource
+from Akatosh.universe import universe
 
 res = Resource(100.0, 50.0)
 lock = Event(0.9,0.9, lambda: print("Unlocked!"))
 
-user = Entity(lock, 1.1, "User")
+user = Entity(lock, 5, "User")
 
-@user.event(1.2,1.2, "Use Resource")
+@user.event(1.2,4, "Use Resource")
 def user_event():
     if res.distribute(user, 1):
         print(res.level)
@@ -18,5 +17,6 @@ def user_event():
         print("Not enough resource")
 
 
-
-universe.simulate(1.2)
+universe.enable_realtime(-1)
+universe.set_logging_level(logging.INFO)
+universe.simulate(10)
