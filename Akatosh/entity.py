@@ -22,8 +22,8 @@ class Entity:
         self._priority = priority
 
         # create an instant creation event
-        self._creation = Event(at, inf, self._create, f"{self} Creation", once=True)
-        self._termination = Event(till, inf, self._terminate, f"{self} Termination", once=True)
+        self._creation = Event(at, inf, self._create, f"{self} Creation", once=True, priority=self.priority)
+        self._termination = Event(till, inf, self._terminate, f"{self} Termination", once=True, priority=self.priority)
 
         # create a queue for engaged events
         self._events: List[Event] = list()
