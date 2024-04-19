@@ -1,21 +1,15 @@
-[project]
+[tool.poetry]
 name = "Akatosh"
-version = "2.3.3"
-authors = [{ name = "Yifei Ren", email = "ryf0510@live.com" }]
-description = "A simple implement for discrete events simulation."
+version = "0.1.0"
+description = ""
+authors = ["Innovation Central Perth Maintainer <ryf0510@live.com>"]
 readme = "README.md"
-requires-python = ">=3.7"
-classifiers = [
-  "Programming Language :: Python :: 3",
-  "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
-  "Operating System :: OS Independent",
-]
 
-[project.urls]
-"Homepage" = "https://github.com/ulfaric/Akatosh"
-"Documentation" = "https://ulfaric.github.io/Akatosh"
-"Bug Tracker" = "https://github.com/ulfaric/Akatosh/issues"
+[tool.poetry.dependencies]
+python = "^3.12"
+colorlog = "^6.8.2"
 
-[tool.setuptools]
-packages = ["Akatosh"]
 
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

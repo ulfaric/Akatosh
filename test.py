@@ -1,8 +1,22 @@
-from Akatosh.event import Event
-from Akatosh.universe import Mundus
+import asyncio
+from math import inf
+from Akatosh.universe import universe
+from Akatosh.resource import Resource
+from Akatosh.entity import Entity
+from Akatosh.event import event, Event
 
-event1 = Event(at=2, action=lambda: print("Genesis!"), label="Genesis")
+res = Resource(100.0, 50.0)
+lock = Event(0.9,0.9, lambda: print("Unlocked!"))
 
-event2 = Event(at=0, after=[event1], action=lambda: print("Hello, World!"), label="Hello World")
+user = Entity(lock, 1.1, "User")
 
-Mundus.simulate()
+@user.event(1.2,1.2, "Use Resource")
+def user_event():
+    if res.distribute(user, 1):
+        print(res.level)
+    else:
+        print("Not enough resource")
+
+
+
+universe.simulate(1.2)

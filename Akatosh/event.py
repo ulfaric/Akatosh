@@ -1,127 +1,115 @@
 from __future__ import annotations
-
-from enum import Enum
-import inspect
-from math import log
-from typing import Any, Callable, List
-from uuid import uuid4
-
-from . import EventState, logger
-from .universe import Mundus
+import asyncio
+from typing import Any, Callable, Optional
+from . import logger
+from .universe import universe
 
 
 class Event:
 
     def __init__(
         self,
-        at: int | float | Callable[..., int] | Callable[..., float],
-        after: List[Event] | None = None,
-        action: Callable | None = None,
-        priority: int | float | Callable[..., int] | Callable[..., float] = 0,
-        state: EventState = EventState.Future,
-        label: str | None = None,
-        *args: Any,
-        **kwargs: Any,
+        at: float | Event,
+        till: float | Event,
+        action: Callable,
+        label: Optional[str] = None,
+        once: bool = False,
     ) -> None:
-        self._id = uuid4().hex
-        self._at = at if not callable(at) else round(at(), Mundus.resolution)
-        self._after = after
+        self._at = at
+        self._till = till
         self._action = action
-        self._priority = priority if not callable(priority) else priority()
-        self._state = state
+        self._started = False
+        self._acted = False
+        self._ended = False
         self._label = label
-        self._args = args
-        self._kwargs = kwargs
-        self._followers: List[Event] = list()
-        
-        if self.after is None:
-            Mundus.future_events.append(self)
-        else:
-            for event in self.after:
-                event.followers.append(self)
-
+        self._once = once
+        universe.pending_events.append(self)
 
     async def __call__(self) -> Any:
-        if self.state == EventState.Current:
-            if self.action:
-                if inspect.iscoroutinefunction(self.action):
-                    await self.action(*self._args, **self._kwargs)
+        while True:
+
+            if self.ended == True:
+                return
+
+            # if self.started == False and self.ended == False:
+            #     if self.at <= universe.time:
+            #         self._started = True
+            #         logger.debug(f"Event {self} started.")
+                    
+            if self.started == False:
+                if isinstance(self.at, Event):
+                    if self.at.ended == True:
+                        self._started = True
+                        logger.debug(f"Event\t{self}\tstarted.")
                 else:
-                    self.action(*self._args, **self._kwargs)
-            self._state = EventState.Past
-            Mundus.current_events.remove(self)
-            Mundus.past_events.append(self)
-            logger.debug(f"Event: {self.label} is executed.")
-            for event in self.followers:
-                if event.after:
-                    if all([follower.state == EventState.Past for follower in event.after]):
-                        event._at = Mundus.now
-                        Mundus.future_events.append(event)
-                        logger.debug(f"Follow-up event {event.label} is added to the future events queue.")
-                    else:
-                        continue
+                    if self.at <= universe.time:
+                        self._started = True
+                        logger.debug(f"Event\t{self}\tstarted.")
+
+            if self.started == True and self.ended == False:
+                if asyncio.iscoroutinefunction(self._action):
+                    await self._action()
                 else:
-                    logger.error(f"Event {event.label} is a follow up event but has no waiting events.")
-        else:
-            logger.error(f"Event {self.label} is not in the current state.")
+                    self._action()
+                self._acted = True
+                logger.debug(f"Event\t{self}\tacted.")
+                if self._once == True:
+                    self._ended = True
+                    logger.debug(f"Event\t{self}\tended.")
+                    return
+
+            if self.ended == False:
+                if isinstance(self.till, Event):
+                    if self.till.ended == True:
+                        self._ended = True
+                        logger.debug(f"Event\t{self}\tended.")
+                        return
+                else:
+                    if self.till <= universe.time:
+                        self._ended = True
+                        logger.debug(f"Event\t{self}\tended.")
+                        return
+                    
+            # if self.ended == False:
+            #     if self.till <= universe.time:
+            #         self._ended = True
+            #         logger.debug(f"Event {self} ended.")
+            #         return
+
+            await universe.time_flow
 
     def __str__(self) -> str:
-        return f"Event: {self.label}, at: {self.at}, state: {self.state}"
+        if self.label is None:
+            return f"Event\t{id(self)}"
+        return self.label
 
-    def cancel(self) -> None:
-        """Cancel the event."""
-        self._state = EventState.Past
-
-    @property
-    def id(self) -> str:
-        return self._id
+    def cancel(self):
+        self._ended = True
+        logger.debug(f"Event\t{self}\tcancelled.")
 
     @property
-    def at(self) -> int | float:
+    def at(self):
         return self._at
 
     @property
-    def after(self) -> List[Event] | None:
-        return self._after
-    
-    @property
-    def followers(self) -> List[Event]:
-        return self._followers
+    def till(self):
+        return self._till
 
     @property
-    def action(self) -> Callable | None:
-        return self._action
+    def started(self):
+        return self._started
 
     @property
-    def priority(self) -> int | float:
-        return self._priority
+    def ended(self):
+        return self._ended
 
     @property
-    def state(self) -> EventState:
-        return self._state
-
-    @property
-    def label(self) -> str | None:
+    def label(self):
         return self._label
 
 
-def event(
-    at: int | float | Callable[..., int] | Callable[..., float],
-    priority: int | float | Callable[..., int] | Callable[..., float] = 0,
-    label: str | None = None,
-    state: EventState = EventState.Future,
-    *args: Any,
-    **kwargs: Any,
-):
-    def _event(func: Callable):
-        return Event(
-            at=at,
-            action=func,
-            priority=priority,
-            label=label,
-            state=state,
-            *args,
-            **kwargs,
-        )
+def event(at: float | Event, till: float | Event, label: Optional[str] = None, once: bool = False):
+    def _event(action: Callable) -> Event:
+        return Event(at, till, action, label, once)
 
     return _event
