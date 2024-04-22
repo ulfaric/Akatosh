@@ -10,5 +10,4 @@ def event2():
 def event1():
     print("Hello")
 
-universe.set_time_resolution(0)
 universe.simulate(2)

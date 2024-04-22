@@ -99,9 +99,7 @@ class Entity:
     def acquire(self, resource: Resource, amount: float) -> bool:
         if resource.distribute(self, amount):
             self.occupied_resources.append(resource)
-            logger.debug(
-                f"Entity {self} acquired {amount} of resource {resource}."
-            )
+            logger.debug(f"Entity {self} acquired {amount} of resource {resource}.")
             return True
         else:
             return False
@@ -109,9 +107,7 @@ class Entity:
     def release(self, resource: Resource, amount: float) -> bool:
         if resource.collect(self, amount):
             self.occupied_resources.remove(resource)
-            logger.debug(
-                f"Entity {self} released {amount} of resource {resource}."
-            )
+            logger.debug(f"Entity {self} released {amount} of resource {resource}.")
             return True
         else:
             return False

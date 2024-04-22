@@ -91,8 +91,10 @@ class Event:
                         self._ended = True
                         logger.debug(f"Event {self} ended.")
                         return
-
-            await asyncio.sleep(universe.time_step)
+            if universe.realtime == True:    
+                await asyncio.sleep(universe.time_step)
+            else:
+                await asyncio.sleep(0)
 
     def __str__(self) -> str:
         """Return the label of the event if it has one, otherwise return the id of the event."""

@@ -10,5 +10,4 @@ def hello():
         print("World")
     
 
-universe.set_time_resolution(1)
 universe.simulate(1)

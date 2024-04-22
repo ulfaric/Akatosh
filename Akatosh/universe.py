@@ -81,17 +81,11 @@ class Universe:
 
     def enable_realtime(self):
         self.time_resolution = 1
-        self._time_step = 1 / pow(10, self.time_resolution)
+        self._time_step = round(1 / pow(10, self.time_resolution), self.time_resolution)
         self._realtime = True
 
     def set_logging_level(self, level: int = logging.DEBUG):
         logger.setLevel(level)
-
-    def set_time_resolution(self, resolution: int):
-        if resolution < 0:
-            raise ValueError("Time resolution cannot be less than 0.")
-        self.time_resolution = resolution
-        self._time_step = 1 / pow(10, self.time_resolution)
         
     @property
     def time(self):
@@ -108,7 +102,7 @@ class Universe:
         if value < 0:
             raise ValueError("Time resolution cannot be less than 0.")
         self._time_resolution = value
-        self._time_step = 1 / pow(10, self.time_resolution)
+        self._time_step = round(1 / pow(10, self.time_resolution), self.time_resolution)
 
     @property
     def time_step(self):
@@ -121,13 +115,6 @@ class Universe:
     @property
     def pending_events(self):
         return self._pending_events
-
-    # @property
-    # async def time_flow(self):
-    #     if self.realtime == True:
-    #         await asyncio.sleep(self.time_step)
-    #     else:
-    #         await asyncio.sleep(0)
 
     @property
     def current_event_priority(self):
