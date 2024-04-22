@@ -1,11 +1,16 @@
 # Akatosh
 
-`Akatosh` is a light-weighted disceret event simulation library. Unlike popular library `Simpy` which is progress-oriented and you have to write generator function for simulated events or events interaction, `Akatosh` is fully object-oriented that events are encapsulated as `InstantEvent`/`ContinousEvent` with states, priority and a life-cycle. The actual impact of events are simply regular python functions. You could create events all at once, or create event within event. In addition, `Akatosh` is async which means event that are happening at the same simulated time will be executed simultaneously for real, unless they have different priority.
+`Akatosh` is a light-weighted disceret event simulation library. Unlike popular library `Simpy` which is progress-oriented and you have to write generator function for simulated events or events interaction, `Akatosh` is fully object-oriented that events are encapsulated as `Event` with states and priority. The actual impact of events are simply regular python functions ( or async function ). You could create events all at once, or create event within event. In addition, `Akatosh` is async which means event that are happening at the same simulated time will be executed simultaneously for real, unless they have different priority.
 
-`Akatosh` also support `Resource`, provide all functionalities as it is in `Simpy` with extra utilities for telemetries collection and interaction with `Entity`. The `Entity` is unique to `Akatosh` which represents a abstract entity with a life-cycle, for example a follower. The `Entity` supports utility functions to interact with `Resource` and automatically releases all its occupied resources upon termination.
+`Akatosh` also support `Resource`, provide all functionalities as it is in `Simpy` with extra utilities for telemetries collection and interaction with `Entity`. The `Entity` is unique to `Akatosh` which represents a abstract entity with a life-cycle, for example a follower NPC. The `Entity` supports utility functions to interact with `Resource` and automatically releases all its occupied resources upon termination.
 
 You probably already noticed that `Akatosh` is the name of "Dragon God of Time" in elder scroll serie, therefore the singleton class `Mundus` is the core of the simulation. The `Mundus` will schedule the events, move forward time and engage async execution.
 
+## Real Time
+
+Since version 3.0.0+, `Akatosh` also supports for real time simulation with time step of 0.1s. Real time simulation can be simply enabled by `Mundus.enable_realtime()`. Please note that due to async event loop overhead, there is about 10% delay from all time steps.
+
+## Quick Start
 To use `Akatosh`:
 
 ```bash

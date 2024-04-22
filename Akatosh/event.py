@@ -2,7 +2,7 @@ from __future__ import annotations
 import asyncio
 from typing import Any, Callable, Optional
 from . import logger
-from .universe import universe
+from .universe import Mundus
 
 
 class Event:
@@ -41,9 +41,9 @@ class Event:
         self._label = label
         self._once = once
         self._priority = priority
-        universe.pending_events.append(self)
-        if self.priority > universe.max_event_priority:
-            universe._max_event_priority = self.priority
+        Mundus.pending_events.append(self)
+        if self.priority > Mundus.max_event_priority:
+            Mundus._max_event_priority = self.priority
 
     async def __call__(self) -> Any:
         """Make the event callable, so it can be awaited like a coroutine."""
@@ -53,7 +53,7 @@ class Event:
                 return
 
             while True:
-                if self.priority == universe.current_event_priority:
+                if self.priority == Mundus.current_event_priority:
                     break
                 else:
                     await asyncio.sleep(0)
@@ -64,7 +64,7 @@ class Event:
                         self._started = True
                         logger.debug(f"Event {self} started.")
                 else:
-                    if self.at <= universe.time:
+                    if self.at <= Mundus.time:
                         self._started = True
                         logger.debug(f"Event {self} started.")
 
@@ -87,12 +87,12 @@ class Event:
                         logger.debug(f"Event {self} ended.")
                         return
                 else:
-                    if self.till <= universe.time:
+                    if self.till <= Mundus.time:
                         self._ended = True
                         logger.debug(f"Event {self} ended.")
                         return
-            if universe.realtime == True:    
-                await asyncio.sleep(universe.time_step)
+            if Mundus.realtime == True:
+                await asyncio.sleep(Mundus.time_step)
             else:
                 await asyncio.sleep(0)
 

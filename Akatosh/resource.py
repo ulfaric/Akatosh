@@ -8,8 +8,18 @@ from .entity import Entity
 class Resource:
 
     def __init__(self, capacity: float, usage: float = 0.0) -> None:
+        """Create a resource with a given capacity and initial usage.
+
+        Args:
+            capacity (float): the maximum amount of resource that can be stored.
+            usage (float, optional): the initial usage of the resource. Defaults to 0.0.
+        """
         self._capacity = capacity
-        self._usage = usage
+        if usage > capacity:
+            logger.warn(f"Initial usage of the resource is greater than the capacity. Setting usage to capacity.")
+            self._usage = capacity
+        else:
+            self._usage = usage
         self._users: List[Tuple[Entity, float]] = list()
 
     def distribute(self, user: Entity, amount: float = inf) -> bool:
@@ -94,16 +104,20 @@ class Resource:
 
     @property
     def capacity(self) -> float:
+        """The maximum amount of resource that can be stored."""
         return self._capacity
 
     @property
     def usage(self) -> float:
+        """The current usage of the resource."""
         return self._usage
 
     @property
     def level(self) -> float:
+        """The current level of the resource."""
         return self.capacity - self.usage
 
     @property
     def users(self) -> List[Tuple[Entity, float]]:
+        """The users of the resource. Each user is a tuple of the entity and the amount of resource used by the entity."""
         return self._users

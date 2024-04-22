@@ -1,7 +1,7 @@
 from Akatosh.entity import Entity
-from Akatosh.universe import universe
+from Akatosh.universe import Mundus
 
-entity2 = Entity(1,3,"Entity 2",2)
-entity1 = Entity(1,3,"Entity 1",1)
+entity2 = Entity(1, 3, "Entity 2", 2)
+entity1 = Entity(1, 3, "Entity 1", 1)
 
-universe.simulate(3)
+Mundus.simulate(3)

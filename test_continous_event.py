@@ -1,16 +1,17 @@
 import logging
 from Akatosh.event import event
-from Akatosh.universe import universe
+from Akatosh.universe import Mundus
 
-    
-@event(1,1.5)
+
+@event(1, 1.5)
 def hello_world():
-    print(f"Hello World at {universe.time}!")
-    
-@event(1,1.5)
+    print(f"Hello World at {Mundus.time}!")
+
+
+@event(1, 1.5)
 def hello_world2():
-    print(f"Hello World at {universe.time}!")
+    print(f"Hello World at {Mundus.time}!")
 
 
-universe.enable_realtime()
-universe.simulate(2)
+Mundus.enable_realtime()
+Mundus.simulate(2)

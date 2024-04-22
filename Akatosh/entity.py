@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Callable, List, Optional
 
 from . import logger
 from .event import Event
-from .universe import universe
+from .universe import Mundus
 
 if TYPE_CHECKING:
     from .resource import Resource
@@ -21,6 +21,14 @@ class Entity:
         label: Optional[str] = None,
         priority: int = 0,
     ) -> None:
+        """Create an entity with a creation and termination event.
+
+        Args:
+            at (float | Event): when the entity is created.
+            till (float | Event): when the entity is terminated.
+            label (Optional[str], optional): short description to the entity. Defaults to None.
+            priority (int, optional): the priority of the entity, only impacts the creation and termination event. Defaults to 0.
+        """
         self._label = label
         self._at = at
         self._till = till
@@ -48,15 +56,18 @@ class Entity:
         self._occupied_resources: List[Resource] = list()
 
     def __str__(self) -> str:
+        """Return the label of the entity if it exists, otherwise return the id of the entity."""
         if self.label is None:
             return f"Entity {id(self)}"
         return self.label
 
     def _create(self):
+        """Called when the entity is created."""
         self._created = True
         logger.debug(f"Entity {self} created.")
 
     def _terminate(self):
+        """Called when the entity is terminated."""
         self._terminated = True
         for event in self.events:
             event.cancel()
@@ -72,6 +83,7 @@ class Entity:
         once: bool = False,
         priority: int = 0,
     ):
+        """Decorator to add an event to the entity."""
 
         def _event(action: Callable):
 
@@ -97,49 +109,55 @@ class Entity:
         return _event
 
     def acquire(self, resource: Resource, amount: float) -> bool:
+        """Acquire a amount from the resource."""
         if resource.distribute(self, amount):
-            self.occupied_resources.append(resource)
-            logger.debug(f"Entity {self} acquired {amount} of resource {resource}.")
             return True
         else:
             return False
 
     def release(self, resource: Resource, amount: float) -> bool:
+        """Release a amount from the resource."""
         if resource.collect(self, amount):
-            self.occupied_resources.remove(resource)
-            logger.debug(f"Entity {self} released {amount} of resource {resource}.")
             return True
         else:
             return False
 
     @property
     def label(self):
+        """Short description of the entity."""
         return self._label
 
     @property
     def created(self):
+        """Return True if the entity is created, otherwise False."""
         return self._created
 
     @property
     def terminated(self):
+        """Return True if the entity is terminated, otherwise False."""
         return self._terminated
 
     @property
     def events(self):
+        """The events that the entity is engaged with."""
         return self._events
 
     @property
     def occupied_resources(self):
+        """The resources that the entity is using."""
         return self._occupied_resources
 
     @property
     def priority(self):
+        """The priority of the entity."""
         return self._priority
 
     @property
     def creation(self):
+        """The creation event of the entity."""
         return self._creation
 
     @property
     def termination(self):
+        """The termination event of the entity."""
         return self._termination

@@ -20,6 +20,7 @@ class Universe:
         return cls._instance
 
     def __init__(self) -> None:
+        """The simulation universe."""
         self._time_resolution = 3
         self._time_step = round(1 / pow(10, self.time_resolution), self.time_resolution)
         self._time = 0
@@ -45,7 +46,9 @@ class Universe:
                     # iterate through all event priorities
                     self._current_event_priority = 0
                     while self.current_event_priority <= self._max_event_priority:
-                        logger.debug(f"Current Event Priority: {self.current_event_priority}")
+                        logger.debug(
+                            f"Current Event Priority: {self.current_event_priority}"
+                        )
                         await asyncio.sleep(0)
                         self._current_event_priority += 1
                     # wait for the time step
@@ -63,14 +66,16 @@ class Universe:
                     # iterate through all event priorities
                     self._current_event_priority = 0
                     while self.current_event_priority <= self._max_event_priority:
-                        logger.debug(f"Current Event Priority: {self.current_event_priority}")
+                        logger.debug(
+                            f"Current Event Priority: {self.current_event_priority}"
+                        )
                         await asyncio.sleep(0)
                         self._current_event_priority += 1
                     # wait for the time step
                     await asyncio.sleep(0)
                 self._time += self.time_step
                 self._time = round(self.time, self.time_resolution)
-                    
+
             simulation_end_time = time.time()
             if self.realtime:
                 logger.info(
@@ -80,25 +85,30 @@ class Universe:
         asyncio.run(time_flow())
 
     def enable_realtime(self):
+        """Enable the real time simulation. Time step will be adjusted to 0.1s."""
         self.time_resolution = 1
         self._time_step = round(1 / pow(10, self.time_resolution), self.time_resolution)
         self._realtime = True
 
     def set_logging_level(self, level: int = logging.DEBUG):
+        """Set the logging level. Default is DEBUG."""
         logger.setLevel(level)
-        
+
     @property
     def time(self):
+        """Return the current time."""
         return self._time
 
     @property
     def time_resolution(self):
+        """Return the time resolution. 1 for 0.1s, 2 for 0.01s, 3 for 0.001s, and so on. Default is 3."""
         if self._time_resolution < 0:
             raise ValueError("Time resolution cannot be less than 0.")
         return self._time_resolution
 
     @time_resolution.setter
     def time_resolution(self, value: int):
+        """Set the time resolution. 1 for 0.1s, 2 for 0.01s, 3 for 0.001s, and so on. Default is 3."""
         if value < 0:
             raise ValueError("Time resolution cannot be less than 0.")
         self._time_resolution = value
@@ -106,23 +116,28 @@ class Universe:
 
     @property
     def time_step(self):
+        """The time step of the simulation. Default is 0.001s."""
         return self._time_step
 
     @property
     def realtime(self):
+        """Return True if the simulation is in real time mode, otherwise False. Default is False."""
         return self._realtime
 
     @property
     def pending_events(self):
+        """The events that are pending to be executed. Please note that this is not the queue for future events. This is used for start async tasks for the events."""
         return self._pending_events
 
     @property
     def current_event_priority(self):
+        """The current event priority."""
         return self._current_event_priority
-    
+
     @property
     def max_event_priority(self):
+        """The maximum event priority."""
         return self._max_event_priority
 
 
-universe = Universe()
+Mundus = Universe()

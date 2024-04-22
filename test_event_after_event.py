@@ -1,7 +1,7 @@
 from Akatosh.event import Event
-from Akatosh.universe import universe
+from Akatosh.universe import Mundus
 
 hello = Event(0.5, 0.5, lambda: print("Hello"))
 world = Event(hello, 0.5, lambda: print("World"))
 
-universe.simulate(1)
+Mundus.simulate(1)
