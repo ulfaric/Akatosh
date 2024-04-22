@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from math import inf
 from typing import TYPE_CHECKING, Callable, List, Optional
 
@@ -83,7 +84,7 @@ class Entity:
                 while True:
                     if not self.created:
                         logger.warn(f"Entity {self} not created yet.")
-                        await universe.time_flow
+                        await asyncio.sleep(0)
                     else:
                         break
 

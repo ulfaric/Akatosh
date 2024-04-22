@@ -22,7 +22,7 @@ class Universe:
     def __init__(self) -> None:
         self._time_resolution = 3
         self._time_step = round(1 / pow(10, self.time_resolution), self.time_resolution)
-        self._time = round(0.0 - self.time_step, self.time_resolution)
+        self._time = 0
         self._realtime = False
         self._current_event_priority = 0
         self._max_event_priority = 0
@@ -36,8 +36,6 @@ class Universe:
             """Flow of time."""
             simulation_start_time = time.time()
             while self.time < till:
-                self._time += self.time_step
-                self._time = round(self.time, self.time_resolution)
                 logger.debug(f"Time:\t{self.time}")
                 for event in self.pending_events:
                     asyncio.create_task(event())
@@ -51,11 +49,15 @@ class Universe:
                         await asyncio.sleep(0)
                         self._current_event_priority += 1
                     # wait for the time step
-                    await universe.time_flow
+                    await asyncio.sleep(self.time_step)
                     end_time = time.time()
                     if end_time - start_time > self.time_step:
                         logger.warning(
-                            f"Simulation time step exceeded real time by {round(((end_time - start_time - self.time_step)/self.time_step)*100,2)}%."
+                            f"Simulation time step exceeded real time by {round(end_time - start_time - self.time_step,6)}."
+                        )
+                    else:
+                        logger.debug(
+                            f"Simulation time step completed in {round(end_time - start_time, 3)} seconds."
                         )
                 else:
                     # iterate through all event priorities
@@ -65,22 +67,21 @@ class Universe:
                         await asyncio.sleep(0)
                         self._current_event_priority += 1
                     # wait for the time step
-                    await universe.time_flow
+                    await asyncio.sleep(0)
+                self._time += self.time_step
+                self._time = round(self.time, self.time_resolution)
                     
             simulation_end_time = time.time()
             if self.realtime:
                 logger.info(
-                    f"Simulation completed in {round(simulation_end_time - simulation_start_time, 3)} seconds, exceeding real time by {round(((simulation_end_time - simulation_start_time - till)/till)*100,2)}%."
+                    f"Simulation completed in {round(simulation_end_time - simulation_start_time, 6)} seconds, exceeding real time by {round(((simulation_end_time - simulation_start_time - till)/till)*100,2)}%."
                 )
 
         asyncio.run(time_flow())
 
-    def enable_realtime(self, resolution: int = 1):
-        if resolution < 0:
-            raise ValueError("Time resolution cannot be less than 0.")
-        self.time_resolution = resolution
+    def enable_realtime(self):
+        self.time_resolution = 1
         self._time_step = 1 / pow(10, self.time_resolution)
-        self._time = round(0.0 - self.time_step, self.time_resolution)
         self._realtime = True
 
     def set_logging_level(self, level: int = logging.DEBUG):
@@ -91,7 +92,6 @@ class Universe:
             raise ValueError("Time resolution cannot be less than 0.")
         self.time_resolution = resolution
         self._time_step = 1 / pow(10, self.time_resolution)
-        self._time = round(0.0 - self.time_step, self.time_resolution)
         
     @property
     def time(self):
@@ -109,7 +109,6 @@ class Universe:
             raise ValueError("Time resolution cannot be less than 0.")
         self._time_resolution = value
         self._time_step = 1 / pow(10, self.time_resolution)
-        self._time = round(0.0 - self.time_step, self.time_resolution)
 
     @property
     def time_step(self):
@@ -123,12 +122,12 @@ class Universe:
     def pending_events(self):
         return self._pending_events
 
-    @property
-    async def time_flow(self):
-        if self.realtime == True:
-            await asyncio.sleep(self.time_step)
-        else:
-            await asyncio.sleep(0)
+    # @property
+    # async def time_flow(self):
+    #     if self.realtime == True:
+    #         await asyncio.sleep(self.time_step)
+    #     else:
+    #         await asyncio.sleep(0)
 
     @property
     def current_event_priority(self):

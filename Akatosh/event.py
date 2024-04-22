@@ -29,8 +29,8 @@ class Event:
         Raises:
             ValueError: _description_
         """
-        if universe.time >= at:
-            raise ValueError(f"Event can only be scheduled for the future.")
+        # if universe.time >= at:
+        #     raise ValueError(f"Event can only be scheduled for the future.")
         self._at = at
         self._till = till
         self._action = action
@@ -92,7 +92,7 @@ class Event:
                         logger.debug(f"Event {self} ended.")
                         return
 
-            await universe.time_flow
+            await asyncio.sleep(universe.time_step)
 
     def __str__(self) -> str:
         """Return the label of the event if it has one, otherwise return the id of the event."""

@@ -17,6 +17,6 @@ def user_event():
         print("Not enough resource")
 
 
-universe.enable_realtime(-1)
+universe.enable_realtime()
 universe.set_logging_level(logging.INFO)
 universe.simulate(10)
