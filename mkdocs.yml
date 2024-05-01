@@ -6,6 +6,7 @@ nav:
       - Event: guides/event.md
       - Entity: guides/entity.md
       - Resource: guides/resource.md
+      - Real Time: guides/realtime.md
   - API Reference:
       - Universe: api/universe.md
       - Event:  api/event.md
