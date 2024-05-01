@@ -38,13 +38,18 @@ class Entity:
 
         # create an instant creation event
         self._creation = Event(
-            at, inf, self._create, f"{self} Creation", once=True, priority=self.priority
+            at=at,
+            till=till,
+            action=self._create,
+            label=f"{self} Creation",
+            once=True,
+            priority=self.priority,
         )
         self._termination = Event(
-            till,
-            inf,
-            self._terminate,
-            f"{self} Termination",
+            at=till,
+            till=till,
+            action=self._terminate,
+            label=f"{self} Termination",
             once=True,
             priority=self.priority,
         )
@@ -79,6 +84,7 @@ class Entity:
         self,
         at: float | Event,
         till: float | Event,
+        step: float = Mundus.time_step,
         label: Optional[str] = None,
         once: bool = False,
         priority: int = 0,
@@ -100,11 +106,21 @@ class Entity:
                     else:
                         break
 
-                event = Event(at, till, action, label, once, priority)
+                event = Event(
+                    at=at,
+                    till=till,
+                    step=step,
+                    action=action,
+                    label=label,
+                    once=once,
+                    priority=priority,
+                )
                 self.events.append(event)
                 logger.debug(f"Event {event} added to entity {self}.")
 
-            Event(at, at, __event, f"{label} Engagement", True)
+            Event(
+                at=at, till=at, action=__event, label=f"{label} Engagement", once=True
+            )
 
         return _event
 

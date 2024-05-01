@@ -13,6 +13,7 @@ class Event:
         at: float | Event,
         till: float | Event,
         action: Callable,
+        step: float = Mundus.time_step,
         label: Optional[str] = None,
         once: bool = False,
         priority: int = 0,
@@ -40,6 +41,7 @@ class Event:
         self._label = label
         self._once = once
         self._priority = priority
+        self._step = step
         self._next = 0
         Mundus.pending_events.append(self)
         if self.priority > Mundus.max_event_priority:
@@ -76,6 +78,8 @@ class Event:
                 and self.paused == False
                 and self.next == Mundus.time
             ):
+                self._next += max(Mundus.time_step, self.step)
+                self._next = round(self._next, Mundus.time_resolution)
                 if asyncio.iscoroutinefunction(self._action):
                     await self._action()
                 else:
@@ -93,17 +97,11 @@ class Event:
                         self._ended = True
                         logger.debug(f"Event {self} ended.")
                         return
-                    else:
-                        self._next += Mundus.time_step
-                        self._next = round(self._next, Mundus.time_resolution)
                 else:
                     if self.till <= Mundus.time:
                         self._ended = True
                         logger.debug(f"Event {self} ended.")
                         return
-                    else:
-                        self._next += Mundus.time_step
-                        self._next = round(self._next, Mundus.time_resolution)
             await asyncio.sleep(0)
 
     def __str__(self) -> str:
@@ -172,15 +170,29 @@ class Event:
         """Return the next time the event acts."""
         return self._next
 
+    @property
+    def step(self):
+        """Return the time step of the event, which overwrites the simulation time step."""
+        return self._step
+
 
 def event(
     at: float | Event,
     till: float | Event,
+    step: float = Mundus.time_step,
     label: Optional[str] = None,
     once: bool = False,
     priority: int = 0,
 ):
     def _event(action: Callable) -> Event:
-        return Event(at, till, action, label, once, priority)
+        return Event(
+            at=at,
+            till=till,
+            step=step,
+            action=action,
+            label=label,
+            once=once,
+            priority=priority,
+        )
 
     return _event

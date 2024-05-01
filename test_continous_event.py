@@ -5,7 +5,7 @@ from Akatosh.universe import Mundus
 from Akatosh import logger
 
 
-@event(1, 1.5)
+@event(at = 1, till = 1.5, step=0.2)
 def hello_world():
     print(f"Hello World at {Mundus.time}!")
 
