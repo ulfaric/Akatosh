@@ -24,8 +24,6 @@ class Universe:
         self._time_resolution = 3
         self._time_step = round(1 / pow(10, self.time_resolution), self.time_resolution)
         self._time = 0
-        self._elapsed_time = 0
-        self._time_difference = 0
         self._simulation_start_time = 0
         self._simulation_end_time = 0
         self._realtime = False
@@ -62,23 +60,6 @@ class Universe:
                     logger.debug(f"Waiting for next interation...")
                     while time.perf_counter() - self.simulation_start_time < self.time:
                         await asyncio.sleep(0)
-                    # self._elapsed_time = (
-                    #     time.perf_counter() - self.simulation_start_time
-                    # )
-                    # self._time_difference = self.time - self.elapsed_time
-                    # logger.debug(
-                    #     f"Current Real Time: {self.elapsed_time:0.3f}."
-                    # )
-                    # waiting_time = max(0, self.time_difference)
-                    # logger.debug(
-                    #     f"Waiting for {waiting_time:0.3f} seconds."
-                    # )
-                    # before = time.perf_counter()
-                    # await asyncio.sleep(waiting_time)
-                    # after = time.perf_counter()
-                    # logger.debug(
-                    #     f"Actual waiting time: {after - before:0.3f} seconds."
-                    # )
                     
                 else:
                     # iterate through all event priorities
@@ -156,16 +137,6 @@ class Universe:
     def max_event_priority(self):
         """The maximum event priority."""
         return self._max_event_priority
-
-    @property
-    def elapsed_time(self):
-        """The real elapsed time of the simulation."""
-        return self._elapsed_time
-
-    @property
-    def time_difference(self):
-        """The time difference between the real time and simulation time."""
-        return self._time_difference
 
     @property
     def simulation_start_time(self):
