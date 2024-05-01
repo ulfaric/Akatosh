@@ -1,5 +1,6 @@
 from __future__ import annotations
 import asyncio
+import time
 from typing import Any, Callable, Optional
 from . import logger
 from .universe import Mundus
@@ -29,8 +30,6 @@ class Event:
         Raises:
             ValueError: _description_
         """
-        # if universe.time >= at:
-        #     raise ValueError(f"Event can only be scheduled for the future.")
         self._at = at
         self._till = till
         self._action = action
@@ -41,6 +40,7 @@ class Event:
         self._label = label
         self._once = once
         self._priority = priority
+        self._next = 0
         Mundus.pending_events.append(self)
         if self.priority > Mundus.max_event_priority:
             Mundus._max_event_priority = self.priority
@@ -62,13 +62,20 @@ class Event:
                 if isinstance(self.at, Event):
                     if self.at.ended == True:
                         self._started = True
+                        self._next = Mundus.time
                         logger.debug(f"Event {self} started.")
                 else:
                     if self.at <= Mundus.time:
                         self._started = True
+                        self._next = Mundus.time
                         logger.debug(f"Event {self} started.")
 
-            if self.started == True and self.ended == False and self.paused == False:
+            if (
+                self.started == True
+                and self.ended == False
+                and self.paused == False
+                and self.next == Mundus.time
+            ):
                 if asyncio.iscoroutinefunction(self._action):
                     await self._action()
                 else:
@@ -86,15 +93,18 @@ class Event:
                         self._ended = True
                         logger.debug(f"Event {self} ended.")
                         return
+                    else:
+                        self._next += Mundus.time_step
+                        self._next = round(self._next, Mundus.time_resolution)
                 else:
                     if self.till <= Mundus.time:
                         self._ended = True
                         logger.debug(f"Event {self} ended.")
                         return
-            if Mundus.realtime == True:
-                await asyncio.sleep(Mundus.time_step)
-            else:
-                await asyncio.sleep(0)
+                    else:
+                        self._next += Mundus.time_step
+                        self._next = round(self._next, Mundus.time_resolution)
+            await asyncio.sleep(0)
 
     def __str__(self) -> str:
         """Return the label of the event if it has one, otherwise return the id of the event."""
@@ -156,6 +166,11 @@ class Event:
     def priority(self):
         """Return the priority of the event."""
         return self._priority
+
+    @property
+    def next(self):
+        """Return the next time the event acts."""
+        return self._next
 
 
 def event(

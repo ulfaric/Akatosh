@@ -1,3 +1,4 @@
+import asyncio
 from Akatosh.event import event
 from Akatosh.universe import Mundus
 
@@ -11,4 +12,4 @@ def hello():
         print("World")
 
 
-Mundus.simulate(1)
+asyncio.run(Mundus.simulate(1))

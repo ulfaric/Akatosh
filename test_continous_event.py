@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from Akatosh.event import event
 from Akatosh.universe import Mundus
@@ -13,5 +14,5 @@ def hello_world2():
     print(f"Hello World at {Mundus.time}!")
 
 
-Mundus.enable_realtime()
-Mundus.simulate(2)
+Mundus.enable_realtime(2)
+asyncio.run(Mundus.simulate(2))

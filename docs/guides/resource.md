@@ -7,6 +7,7 @@ To distribute `Resource` to `Entity`, you could use either `distribute()` class 
 Similar, to return/collect resource, you could user `collect()` class function from `Resource` or `release()` class function from `Entity`. If the amount is larger than the current occupied amount by the user, all occupied resource will be released/collected.
 
 ```py
+import asyncio
 from Akatosh.entity import Entity
 from Akatosh.event import event
 from Akatosh.resource import Resource
@@ -33,5 +34,5 @@ def check_resource():
     print(f"Resource: {res.level}")
 
 universe.time_resolution=1
-universe.simulate(6)
+asyncio.run(universe.simulate(6))
 ```

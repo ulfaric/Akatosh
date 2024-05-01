@@ -20,6 +20,7 @@ pip install -U Akatosh
 A basic example is showing below, for more information please look at *Examples* and *API Reference*, full documentation is available at https://ulfaric.github.io/Akatosh/.
 
 ```py
+import asyncio
 from Akatosh.universe import universe
 from Akatosh.resource import Resource
 from Akatosh.entity import Entity
@@ -44,5 +45,5 @@ def user_event():
 
 
 # run simulation for 1.2s
-universe.simulate(1.2)
+asyncio.run(universe.simulate(1.2))
 ```

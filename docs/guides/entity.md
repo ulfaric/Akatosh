@@ -7,11 +7,12 @@ In Akatosh, an Entity is an object that can engage events during its life-cycle 
 Entity can be created similar to an event:
 
 ```py
+import asyncio
 from Akatosh.entity import Entity
 from Akatosh.universe import universe
 
 entity = Entity(1,3,"Entity") 
-universe.simulate(4)
+asyncio.run(universe.simulate(4))
 ```
 
 However, upon creation of a entity, two instant events are created: creation & termination, which determine the life cycle of the entity. These two events can be accessed as:
@@ -26,12 +27,13 @@ entity.termination
 Similar to event, you can define the creation time of an entity based on an event:
 
 ```py
+import asyncio
 from Akatosh.entity import Entity
 from Akatosh.universe import universe
 
 entity = Entity(1,3,"Entity") 
 entity2 = Entity(entity.termination, 4, "Second Entity") # entity 2 will be created after the first entity is terminated.
-universe.simulate(4)
+asyncio.run(universe.simulate(4))
 ```
 
 ## Entity with priority
@@ -39,6 +41,7 @@ universe.simulate(4)
 Same as events, you can give priority to entity which are scheduled to be created at the same time:
 
 ```py
+import asyncio
 from Akatosh.entity import Entity
 from Akatosh.universe import universe
 
@@ -46,7 +49,7 @@ entity1 = Entity(1,3,"Entity 1", 1)
 entity2 = Entity(1,4,"Entity 2", 2) # entity2 will be created after entity1 but still at 1s.
 
 universe.set_time_resolution(0)
-universe.simulate(4)
+asyncio.run(universe.simulate(4))
 ```
 
 ## Engage a event
