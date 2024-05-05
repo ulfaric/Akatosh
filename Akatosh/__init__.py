@@ -3,7 +3,7 @@ import colorlog
 
     
 # set up logging
-logger = logging.getLogger("FasterAPI")
+logger = logging.getLogger("Akatosh")
 stream_handler = logging.StreamHandler()
 
 # Define log colors
