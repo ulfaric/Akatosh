@@ -78,13 +78,13 @@ class Event:
                 and self.paused == False
                 and self.next == Mundus.time
             ):
-                self._next += max(Mundus.time_step, self.step)
-                self._next = round(self._next, Mundus.time_resolution)
                 if asyncio.iscoroutinefunction(self._action):
                     await self._action()
                 else:
                     self._action()
                 self._acted = True
+                self._next += max(Mundus.time_step, self.step)
+                self._next = round(self._next, Mundus.time_resolution)
                 logger.debug(f"Event {self} acted.")
                 if self._once == True:
                     self._ended = True
