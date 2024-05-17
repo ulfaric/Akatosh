@@ -65,18 +65,18 @@ class Event:
                     if self.at.ended == True:
                         self._started = True
                         self._next = Mundus.time
-                        logger.debug(f"Event {self} started.")
+                        logger.debug(f"Event {self} started at {Mundus.time}.")
                 else:
                     if self.at <= Mundus.time:
                         self._started = True
                         self._next = Mundus.time
-                        logger.debug(f"Event {self} started.")
+                        logger.debug(f"Event {self} started at {Mundus.time}.")
 
             if (
                 self.started == True
                 and self.ended == False
                 and self.paused == False
-                and self.next == Mundus.time
+                and self.next <= Mundus.time
             ):
                 if asyncio.iscoroutinefunction(self._action):
                     await self._action()
@@ -85,22 +85,22 @@ class Event:
                 self._acted = True
                 self._next += max(Mundus.time_step, self.step)
                 self._next = round(self._next, Mundus.time_resolution)
-                logger.debug(f"Event {self} acted.")
+                logger.debug(f"Event {self} acted at {Mundus.time}.")
                 if self._once == True:
                     self._ended = True
-                    logger.debug(f"Event {self} ended.")
+                    logger.debug(f"Event {self} ended at {Mundus.time}.")
                     return
 
             if self.ended == False:
                 if isinstance(self.till, Event):
                     if self.till.ended == True:
                         self._ended = True
-                        logger.debug(f"Event {self} ended.")
+                        logger.debug(f"Event {self} ended at {Mundus.time}.")
                         return
                 else:
                     if self.till <= Mundus.time:
                         self._ended = True
-                        logger.debug(f"Event {self} ended.")
+                        logger.debug(f"Event {self} ended at {Mundus.time}.")
                         return
             await asyncio.sleep(0)
 

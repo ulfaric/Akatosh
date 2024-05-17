@@ -44,7 +44,8 @@ class Universe:
                     asyncio.create_task(event())
                 self.pending_events.clear()
                 if self.realtime:
-                    logger.debug(f"Iteration started at Real Time: {time.perf_counter() - self.simulation_start_time:0.6f}")
+                    iteration_start_time = time.perf_counter() - self.simulation_start_time
+                    logger.debug(f"Iteration started at Real Time: {iteration_start_time:0.6f}")
                     # iterate through all event priorities
                     self._current_event_priority = 0
                     while self.current_event_priority <= self._max_event_priority:
@@ -54,12 +55,15 @@ class Universe:
                         await asyncio.sleep(0)
                         self._current_event_priority += 1
                     # wait for the time step
-                    self._time += self.time_step
-                    self._time = round(self.time, self.time_resolution)
-                    logger.debug(f"Iteration finished at Real Time: {time.perf_counter() - self.simulation_start_time:0.6f}")
-                    logger.debug(f"Waiting for next interation...")
-                    while time.perf_counter() - self.simulation_start_time < self.time:
-                        await asyncio.sleep(0)
+                    # self._time += self.time_step
+                    # self._time = round(self.time, self.time_resolution)
+                    iteration_end_time = time.perf_counter() - self.simulation_start_time
+                    logger.debug(f"Iteration finished at Real Time: {iteration_end_time:0.6f}")
+                    logger.debug(f"FPS: {1/(iteration_end_time - iteration_start_time):0.6f}")
+                    # while time.perf_counter() - self.simulation_start_time < self.time:
+                    #     await asyncio.sleep(0)
+                    self._time = time.perf_counter() - self.simulation_start_time
+                    await asyncio.sleep(0)
                     
                 else:
                     # iterate through all event priorities
