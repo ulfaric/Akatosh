@@ -31,15 +31,18 @@ class Universe:
         self._current_event_priority = 0
         self._max_event_priority = 0
         self._pending_events: List[Event] = list()
+        self._paused = False
+        self._paused_at = 0
 
     def simulate(self, till: float):
         """Simulate the universe until the given time."""
-
         # Define the flow of time
         async def time_flow():
             """Flow of time."""
             self._simulation_start_time = time.perf_counter()
             while self.time < till:
+                if self.paused:
+                    continue
                 logger.debug(f"Simulation time:\t{self.time}")
                 for event in self.pending_events:
                     asyncio.create_task(event())
@@ -85,12 +88,25 @@ class Universe:
 
         return time_flow()
 
-    def enable_realtime(self, time_resolution: int = 3, time_scale: float = 1):
+    def enable_realtime(self, time_scale: float = 1):
         """Enable the real time simulation. Time step will be adjusted to 0.1s."""
-        self.time_resolution = time_resolution
-        self._time_step = round(1 / pow(10, self.time_resolution), self.time_resolution)
         self._time_scale = time_scale
         self._realtime = True
+
+    def disable_realtime(self, time_resolution: int = 3):
+        """Disable the real time simulation. Time step will be adjusted to 0.001s by default."""
+        self._time_resolution = time_resolution
+        self._realtime = False
+
+    def pause(self):
+        """Pause the simulation."""
+        self._paused = True
+        self._pasued_at = time.perf_counter()
+
+    def resume(self):
+        """Resume the simulation."""
+        self._paused = False
+        self._simulation_start_time += time.perf_counter() - self._paused_at
 
     def set_logging_level(self, level: int = logging.DEBUG):
         """Set the logging level. Default is DEBUG."""
@@ -155,5 +171,10 @@ class Universe:
     def time_scale(self):
         """The time scale of the simulation. Default is 1. Only works in real time mode."""
         return self._time_scale
+    
+    @property
+    def paused(self):
+        """Return True if the simulation is paused, otherwise False."""
+        return self._paused
 
 Mundus = Universe()

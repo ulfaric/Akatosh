@@ -86,10 +86,13 @@ class Event:
                 if Mundus.realtime:
                     if self.step != Mundus.time_step:
                         self._next = round(
-                            Mundus.time + self.step, Mundus.time_resolution
+                            time.perf_counter()
+                            - Mundus.simulation_start_time
+                            + self.step,
+                            Mundus.time_resolution,
                         )
                     else:
-                        self._next = Mundus.time
+                        self._next = time.perf_counter() - Mundus.simulation_start_time
                 else:
                     self._next += max(Mundus.time_step, self.step)
                     self._next = round(self._next, Mundus.time_resolution)
