@@ -83,8 +83,16 @@ class Event:
                 else:
                     self._action()
                 self._acted = True
-                self._next += max(Mundus.time_step, self.step)
-                self._next = round(self._next, Mundus.time_resolution)
+                if Mundus.realtime:
+                    if self.step != Mundus.time_step:
+                        self._next = round(
+                            Mundus.time + self.step, Mundus.time_resolution
+                        )
+                    else:
+                        self._next = Mundus.time
+                else:
+                    self._next += max(Mundus.time_step, self.step)
+                    self._next = round(self._next, Mundus.time_resolution)
                 logger.debug(f"Event {self} acted at {Mundus.time}.")
                 if self._once == True:
                     self._ended = True

@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "Akatosh"
-version = "3.0.7"
+version = "3.0.8"
 description = ""
 authors = ["Innovation Central Perth Maintainer <ryf0510@live.com>"]
 readme = "README.md"

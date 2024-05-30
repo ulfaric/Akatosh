@@ -22,6 +22,7 @@ class Universe:
     def __init__(self) -> None:
         """The simulation universe."""
         self._time_resolution = 3
+        self._time_scale = 1
         self._time_step = round(1 / pow(10, self.time_resolution), self.time_resolution)
         self._time = 0
         self._simulation_start_time = 0
@@ -59,7 +60,7 @@ class Universe:
                     logger.debug(f"Iteration finished at Real Time: {iteration_end_time:0.6f}")
                     logger.debug(f"FPS: {1/(iteration_end_time - iteration_start_time):0.6f}")
                     # update the time
-                    self._time = time.perf_counter() - self.simulation_start_time
+                    self._time = (time.perf_counter() - self.simulation_start_time) * self.time_scale
                     await asyncio.sleep(0)
                     
                 else:
@@ -84,10 +85,11 @@ class Universe:
 
         return time_flow()
 
-    def enable_realtime(self, time_resolution: int = 3):
+    def enable_realtime(self, time_resolution: int = 3, time_scale: float = 1):
         """Enable the real time simulation. Time step will be adjusted to 0.1s."""
         self.time_resolution = time_resolution
         self._time_step = round(1 / pow(10, self.time_resolution), self.time_resolution)
+        self._time_scale = time_scale
         self._realtime = True
 
     def set_logging_level(self, level: int = logging.DEBUG):
@@ -149,5 +151,9 @@ class Universe:
         """The time when the simulation ended."""
         return self._simulation_end_time
 
+    @property
+    def time_scale(self):
+        """The time scale of the simulation. Default is 1. Only works in real time mode."""
+        return self._time_scale
 
 Mundus = Universe()
