@@ -16,7 +16,7 @@
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.5.3, mkdocs-material-9.5.14">
+      <meta name="generator" content="mkdocs-1.6.0, mkdocs-material-9.5.25">
     
     
       
@@ -24,7 +24,7 @@
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.10ba22f1.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.6543a935.min.css">
       
         
         <link rel="stylesheet" href="../../assets/stylesheets/palette.06af60db.min.css">
@@ -446,6 +446,17 @@
         
       
       
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Real Time
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
       <a href="./" class="md-nav__link md-nav__link--active">
         
   
@@ -455,6 +466,43 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#time-scale" class="md-nav__link">
+    <span class="md-ellipsis">
+      Time Scale
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pause-and-resume" class="md-nav__link">
+    <span class="md-ellipsis">
+      Pause and Resume
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
       
     </li>
   
@@ -629,6 +677,32 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#time-scale" class="md-nav__link">
+    <span class="md-ellipsis">
+      Time Scale
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pause-and-resume" class="md-nav__link">
+    <span class="md-ellipsis">
+      Pause and Resume
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -657,6 +731,17 @@
 </span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="n">asyncio</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">Mundus</span><span class="o">.</span><span class="n">simulate</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span>
 </span></code></pre></div>
 <p>The above codes will print "Hello World at {Mundus.time}" every 10ms fromm 1s to 1.5s!</p>
+<h2 id="time-scale">Time Scale</h2>
+<p>You can also set time scale to make the real time simulation run faster than realtime. (Please note that relativity theory will not be considered if your time scale is huge...)</p>
+<div class="language-py highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">Mundus</span><span class="o">.</span><span class="n">set_timescale</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span> <span class="c1"># this will make simulation run 5x faster than real time!</span>
+</span></code></pre></div>
+<p>You can change the time scale at any time while the simulation is runing, even with a event itself.</p>
+<h2 id="pause-and-resume">Pause and Resume</h2>
+<p>You can also pause and resume the simulation.</p>
+<div class="language-py highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">Mundus</span><span class="o">.</span><span class="n">pause</span><span class="p">()</span> <span class="c1"># this will pause the simulation.</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="n">Mundus</span><span class="o">.</span><span class="n">resume</span><span class="p">()</span> <span class="c1"># this will resume the simulation.</span>
+</span></code></pre></div>
+<p>Technically, this should works for non-real time mode too.</p>
 
 
 
@@ -706,7 +791,7 @@
     <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.path", "navigation.sections", "navigation.indexes", "navigation.tracking", "content.code.copy"], "search": "../../assets/javascripts/workers/search.b8dbb3d2.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
     
     
-      <script src="../../assets/javascripts/bundle.bd41221c.min.js"></script>
+      <script src="../../assets/javascripts/bundle.081f42fc.min.js"></script>
       
     
   </body>
