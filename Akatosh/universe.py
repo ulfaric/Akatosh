@@ -32,24 +32,29 @@ class Universe:
         self._max_event_priority = 0
         self._pending_events: List[Event] = list()
         self._paused = False
-        self._paused_at = 0
 
     def simulate(self, till: float):
         """Simulate the universe until the given time."""
+
         # Define the flow of time
         async def time_flow():
             """Flow of time."""
             self._simulation_start_time = time.perf_counter()
             while self.time < till:
                 if self.paused:
+                    await asyncio.sleep(0)
                     continue
                 logger.debug(f"Simulation time:\t{self.time}")
                 for event in self.pending_events:
                     asyncio.create_task(event())
                 self.pending_events.clear()
                 if self.realtime:
-                    iteration_start_time = time.perf_counter() - self.simulation_start_time
-                    logger.debug(f"Iteration started at Real Time: {iteration_start_time:0.6f}")
+                    iteration_start_time = (
+                        time.perf_counter() - self.simulation_start_time
+                    )
+                    logger.debug(
+                        f"Iteration started at Real Time: {iteration_start_time:0.6f}"
+                    )
                     # iterate through all event priorities
                     self._current_event_priority = 0
                     while self.current_event_priority <= self._max_event_priority:
@@ -59,13 +64,19 @@ class Universe:
                         await asyncio.sleep(0)
                         self._current_event_priority += 1
                     # finish the iteration
-                    iteration_end_time = time.perf_counter() - self.simulation_start_time
-                    logger.debug(f"Iteration finished at Real Time: {iteration_end_time:0.6f}")
-                    logger.debug(f"FPS: {1/(iteration_end_time - iteration_start_time):0.6f}")
+                    iteration_end_time = (
+                        time.perf_counter() - self.simulation_start_time
+                    )
                     # update the time
-                    self._time = (time.perf_counter() - self.simulation_start_time) * self.time_scale
+                    self._time += (iteration_end_time - iteration_start_time) * self.time_scale
+                    logger.debug(
+                        f"Iteration finished at Real Time: {iteration_end_time:0.6f}"
+                    )
+                    logger.debug(
+                        f"FPS: {1/(iteration_end_time - iteration_start_time):0.6f}"
+                    )
                     await asyncio.sleep(0)
-                    
+
                 else:
                     # iterate through all event priorities
                     self._current_event_priority = 0
@@ -88,25 +99,38 @@ class Universe:
 
         return time_flow()
 
-    def enable_realtime(self, time_scale: float = 1):
-        """Enable the real time simulation. Time step will be adjusted to 0.1s."""
-        self._time_scale = time_scale
+    def enable_realtime(self):
+        """Enable the real time simulation."""
         self._realtime = True
 
-    def disable_realtime(self, time_resolution: int = 3):
-        """Disable the real time simulation. Time step will be adjusted to 0.001s by default."""
-        self._time_resolution = time_resolution
+    def disable_realtime(self):
+        """Disable the real time simulation."""
         self._realtime = False
+
+    def set_timescale(self, scale: float):
+        """Set the time scale of the simulation. Default is 1. Only works in real time mode."""
+        if not self.realtime:
+            logger.warning("Time scale only works in real time mode.")
+            return
+        self.pause()
+        self._time_scale = scale
+        self.resume()
 
     def pause(self):
         """Pause the simulation."""
+        if self.paused:
+            logger.warning("Simulation is already paused.")
+            return
         self._paused = True
-        self._pasued_at = time.perf_counter()
+        logger.debug(f"Simulation paused at {self.time}.")
 
     def resume(self):
         """Resume the simulation."""
+        if not self.paused:
+            logger.warning("Simulation is already running.")
+            return
         self._paused = False
-        self._simulation_start_time += time.perf_counter() - self._paused_at
+        logger.debug(f"Simulation resumed at {self.time}.")
 
     def set_logging_level(self, level: int = logging.DEBUG):
         """Set the logging level. Default is DEBUG."""
@@ -171,10 +195,11 @@ class Universe:
     def time_scale(self):
         """The time scale of the simulation. Default is 1. Only works in real time mode."""
         return self._time_scale
-    
+
     @property
     def paused(self):
         """Return True if the simulation is paused, otherwise False."""
         return self._paused
+
 
 Mundus = Universe()

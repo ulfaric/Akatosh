@@ -14,6 +14,6 @@ def event2():
 def event1():
     print("Hello")
 
-Mundus.enable_realtime(1)
+Mundus.enable_realtime()
 Akatosh.logger.setLevel(logging.INFO)
 asyncio.run(Mundus.simulate(1.1))

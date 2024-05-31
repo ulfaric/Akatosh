@@ -11,5 +11,5 @@ def hello_world():
 
 
 logger.setLevel(logging.ERROR)
-Mundus.enable_realtime(1)
+Mundus.enable_realtime()
 asyncio.run(Mundus.simulate(2))
