@@ -1,9 +1,10 @@
 [tool.poetry]
 name = "Akatosh"
-version = "3.0.11"
-description = ""
-authors = ["Innovation Central Perth Maintainer <ryf0510@live.com>"]
+version = "3.0.12"
+description = "Discrete event simulation framework supports real-time simulation without time step!"
+authors = ["ulfaric <ryf0510@live.com>"]
 readme = "README.md"
+license = "CC-BY-NC-ND-4.0"
 
 [tool.poetry.dependencies]
 python = "^3.7"
