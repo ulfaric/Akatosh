@@ -5,6 +5,7 @@ description = "Discrete event simulation framework supports real-time simulation
 authors = ["ulfaric <ryf0510@live.com>"]
 readme = "README.md"
 license = "CC-BY-NC-ND-4.0"
+repository = "https://github.com/ulfaric/Akatosh"
 
 [tool.poetry.dependencies]
 python = "^3.7"
