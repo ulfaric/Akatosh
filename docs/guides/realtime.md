@@ -2,6 +2,8 @@
 
 This is a unique feature of Akatosh that it is capable of simulting event in real time. It is achieved by carefully using the combination of while loop and asyncio.sleep which gurantees the simulation time step is sync with real time. In each time step, the event will be executed based on their priorities. As long as the execution time of your scheduled event is not exceeding the time step resolution (defualt to 1ms), your events will be in sync with real time.
 
+If your time step is set to very small (less than a couple of ms), you may cause time out error and the event will not be executed futher. This is to follow a IEC 61131 - 3 style.
+
 ```py
 import asyncio
 from Akatosh.event import event
