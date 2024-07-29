@@ -78,10 +78,25 @@ class Event:
                 and self.paused == False
                 and self.next <= Mundus.time
             ):
+                # Following IEC 61131 -3, if a event exceeded its deadline, it should be logged and not executed further. Real-time mode only.
+                _waiting_duration = Mundus.time - self.next
+                if Mundus.realtime and Mundus.time_scale == 1 and self.step!=0 and _waiting_duration > self.step:
+                    logger.error(f"Event {self} waiting time exceeded deadline by {_waiting_duration-self.step} seconds.")
+                    return
+                _execution_start_time = time.perf_counter()
                 if asyncio.iscoroutinefunction(self._action):
                     await self._action()
                 else:
                     self._action()
+                _execution_end_time = time.perf_counter()
+                _execution_duration = _execution_end_time - _execution_start_time
+                if Mundus.realtime and Mundus.time_scale == 1 and self.step!=0 and _execution_duration > self.step:
+                    logger.error(f"Event {self} execution exceeded deadline by {_execution_duration-self.step} seconds.")
+                    return
+                _event_duration = _waiting_duration + _execution_duration
+                if Mundus.realtime and Mundus.time_scale == 1 and self.step!=0 and _event_duration > self.step:
+                    logger.error(f"Event {self} exceeded deadline by {_event_duration-self.step} seconds.")
+                    return
                 self._acted = True
                 if Mundus.realtime:
                     if self.step != Mundus.time_step:
