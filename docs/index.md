@@ -6,6 +6,8 @@
 
 You probably already noticed that `Akatosh` is the name of "Dragon God of Time" in elder scroll serie, therefore the singleton class `Mundus` is the core of the simulation. The `Mundus` will schedule the events, move forward time and engage async execution.
 
+This work is licensed under CC BY-NC-ND 4.0. To view a copy of this license, visit <https://creativecommons.org/licenses/by-nc-nd/4.0/>
+
 ## Real Time
 
 Since version 3.0.0+, `Akatosh` also supports for real time simulation with time step of 0.1s. Real time simulation can be simply enabled by `Mundus.enable_realtime()`. Please note that due to async event loop overhead, there is about 10% delay from all time steps.
