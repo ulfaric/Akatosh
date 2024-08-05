@@ -17,6 +17,7 @@ class Event:
         label: Optional[str] = None,
         once: bool = False,
         priority: int = 0,
+        watchdog:Optional[Callable] = None,
     ) -> None:
         """Create an event which happens at a certain time and ends at a certain time.
 
@@ -42,6 +43,7 @@ class Event:
         self._once = once
         self._priority = priority
         self._step = step
+        self._watchdog = watchdog
         self._next = 0
         Mundus.pending_events.append(self)
         if self.priority > Mundus.max_event_priority:
@@ -82,6 +84,8 @@ class Event:
                 _waiting_duration = Mundus.time - self.next
                 if Mundus.realtime and Mundus.time_scale == 1 and self.step!=0 and _waiting_duration > self.step:
                     logger.error(f"Event {self} waiting time exceeded deadline by {_waiting_duration-self.step} seconds.")
+                    if self.watchdog is not None:
+                        self.watchdog()
                     return
                 _execution_start_time = time.perf_counter()
                 if asyncio.iscoroutinefunction(self._action):
@@ -92,10 +96,14 @@ class Event:
                 _execution_duration = _execution_end_time - _execution_start_time
                 if Mundus.realtime and Mundus.time_scale == 1 and self.step!=0 and _execution_duration > self.step:
                     logger.error(f"Event {self} execution exceeded deadline by {_execution_duration-self.step} seconds.")
+                    if self.watchdog is not None:
+                        self.watchdog()
                     return
                 _event_duration = _waiting_duration + _execution_duration
                 if Mundus.realtime and Mundus.time_scale == 1 and self.step!=0 and _event_duration > self.step:
                     logger.error(f"Event {self} exceeded deadline by {_event_duration-self.step} seconds.")
+                    if self.watchdog is not None:
+                        self.watchdog()
                     return
                 self._acted = True
                 if Mundus.realtime:
@@ -201,6 +209,10 @@ class Event:
         """Return the time step of the event, which overwrites the simulation time step."""
         return self._step
 
+    @property
+    def watchdog(self):
+        """Return the watchdog of the event, which is a function that is called when the event exceeds its deadline in real-time mode."""
+        return self._watchdog
 
 def event(
     at: float | Event,
@@ -209,6 +221,7 @@ def event(
     label: Optional[str] = None,
     once: bool = False,
     priority: int = 0,
+    watchdog:Optional[Callable] = None,
 ):
     def _event(action: Callable) -> Event:
         return Event(
@@ -219,6 +232,7 @@ def event(
             label=label,
             once=once,
             priority=priority,
+            watchdog=watchdog,
         )
 
     return _event

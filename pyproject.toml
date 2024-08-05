@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "Akatosh"
-version = "3.0.14"
+version = "3.0.15"
 description = "Discrete event simulation framework supports real-time simulation without time step!"
 authors = ["ulfaric <ryf0510@live.com>"]
 readme = "README.md"

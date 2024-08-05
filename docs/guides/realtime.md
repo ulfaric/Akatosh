@@ -40,3 +40,15 @@ Mundus.resume() # this will resume the simulation.
 ```
 
 Technically, this should works for non-real time mode too.
+
+## Watchdog
+
+Unlike the standard in IEC 61131 - 3, if a event/task exceeded the deadline, the whole program will stop. In Akatosh, only the event/task itself will stop if it is a cotinouse event. But additionally, you can define a watchdog function as pass it when create a event. Then, the wacthdog event will be execued when exceeding deadline happens.
+
+```py
+def watchdog():
+    print(f"Watchdog bite!")
+hello_world = Event(0,5,lambda: print(f"Hello world at {Mundus.time}"), 0.0005, watchdog=watchdog)
+```
+
+The above example will trigger watchdog function if hello world is not printed in time of 0.5 ms.
