@@ -500,6 +500,15 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#watchdog" class="md-nav__link">
+    <span class="md-ellipsis">
+      Watchdog
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -701,6 +710,15 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#watchdog" class="md-nav__link">
+    <span class="md-ellipsis">
+      Watchdog
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -743,6 +761,13 @@
 </span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="n">Mundus</span><span class="o">.</span><span class="n">resume</span><span class="p">()</span> <span class="c1"># this will resume the simulation.</span>
 </span></code></pre></div>
 <p>Technically, this should works for non-real time mode too.</p>
+<h2 id="watchdog">Watchdog</h2>
+<p>Unlike the standard in IEC 61131 - 3, if a event/task exceeded the deadline, the whole program will stop. In Akatosh, only the event/task itself will stop if it is a cotinouse event. But additionally, you can define a watchdog function as pass it when create a event. Then, the wacthdog event will be execued when exceeding deadline happens.</p>
+<div class="language-py highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="k">def</span> <span class="nf">watchdog</span><span class="p">():</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Watchdog bite!&quot;</span><span class="p">)</span>
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="n">hello_world</span> <span class="o">=</span> <span class="n">Event</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="k">lambda</span><span class="p">:</span> <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Hello world at </span><span class="si">{</span><span class="n">Mundus</span><span class="o">.</span><span class="n">time</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">),</span> <span class="mf">0.0005</span><span class="p">,</span> <span class="n">watchdog</span><span class="o">=</span><span class="n">watchdog</span><span class="p">)</span>
+</span></code></pre></div>
+<p>The above example will trigger watchdog function if hello world is not printed in time of 0.5 ms.</p>
 
 
 
