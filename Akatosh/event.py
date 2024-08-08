@@ -17,7 +17,7 @@ class Event:
         label: Optional[str] = None,
         once: bool = False,
         priority: int = 0,
-        watchdog:Optional[Callable] = None,
+        watchdog: Optional[Callable] = None,
     ) -> None:
         """Create an event which happens at a certain time and ends at a certain time.
 
@@ -82,8 +82,15 @@ class Event:
             ):
                 # Following IEC 61131 -3, if a event exceeded its deadline, it should be logged and not executed further. Real-time mode only.
                 _waiting_duration = Mundus.time - self.next
-                if Mundus.realtime and Mundus.time_scale == 1 and self.step!=0 and _waiting_duration > self.step:
-                    logger.error(f"Event {self} waiting time exceeded deadline by {_waiting_duration-self.step} seconds.")
+                if (
+                    Mundus.realtime
+                    and Mundus.time_scale == 1
+                    and self.step != Mundus.time_step
+                    and _waiting_duration > self.step
+                ):
+                    logger.error(
+                        f"Event {self} waiting time exceeded deadline by {_waiting_duration-self.step} seconds."
+                    )
                     if self.watchdog is not None:
                         self.watchdog()
                     return
@@ -94,14 +101,28 @@ class Event:
                     self._action()
                 _execution_end_time = time.perf_counter()
                 _execution_duration = _execution_end_time - _execution_start_time
-                if Mundus.realtime and Mundus.time_scale == 1 and self.step!=0 and _execution_duration > self.step:
-                    logger.error(f"Event {self} execution exceeded deadline by {_execution_duration-self.step} seconds.")
+                if (
+                    Mundus.realtime
+                    and Mundus.time_scale == 1
+                    and self.step != Mundus.time_step
+                    and _execution_duration > self.step
+                ):
+                    logger.error(
+                        f"Event {self} execution exceeded deadline by {_execution_duration-self.step} seconds."
+                    )
                     if self.watchdog is not None:
                         self.watchdog()
                     return
                 _event_duration = _waiting_duration + _execution_duration
-                if Mundus.realtime and Mundus.time_scale == 1 and self.step!=0 and _event_duration > self.step:
-                    logger.error(f"Event {self} exceeded deadline by {_event_duration-self.step} seconds.")
+                if (
+                    Mundus.realtime
+                    and Mundus.time_scale == 1
+                    and self.step != Mundus.time_step
+                    and _event_duration > self.step
+                ):
+                    logger.error(
+                        f"Event {self} exceeded deadline by {_event_duration-self.step} seconds."
+                    )
                     if self.watchdog is not None:
                         self.watchdog()
                     return
@@ -113,9 +134,7 @@ class Event:
                             Mundus.time_resolution,
                         )
                     else:
-                        self._next = (
-                            Mundus.time
-                        )
+                        self._next = Mundus.time
                 else:
                     self._next += max(Mundus.time_step, self.step)
                     self._next = round(self._next, Mundus.time_resolution)
@@ -214,6 +233,7 @@ class Event:
         """Return the watchdog of the event, which is a function that is called when the event exceeds its deadline in real-time mode."""
         return self._watchdog
 
+
 def event(
     at: float | Event,
     till: float | Event,
@@ -221,7 +241,7 @@ def event(
     label: Optional[str] = None,
     once: bool = False,
     priority: int = 0,
-    watchdog:Optional[Callable] = None,
+    watchdog: Optional[Callable] = None,
 ):
     def _event(action: Callable) -> Event:
         return Event(
