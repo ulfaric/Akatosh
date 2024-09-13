@@ -20,16 +20,6 @@ asyncio.run(Mundus.simulate(2))
 
 The above codes will print "Hello World at {Mundus.time}" every 10ms fromm 1s to 1.5s!
 
-## Time Scale
-
-You can also set time scale to make the real time simulation run faster than realtime. (Please note that relativity theory will not be considered if your time scale is huge...)
-
-```py
-Mundus.set_timescale(5) # this will make simulation run 5x faster than real time!
-```
-
-You can change the time scale at any time while the simulation is runing, even with a event itself.
-
 ## Pause and Resume
 
 You can also pause and resume the simulation.
@@ -43,7 +33,7 @@ Technically, this should works for non-real time mode too.
 
 ## Watchdog
 
-Unlike the standard in IEC 61131 - 3, if a event/task exceeded the deadline, the whole program will stop. In Akatosh, only the event/task itself will stop if it is a cotinouse event. But additionally, you can define a watchdog function as pass it when create a event. Then, the wacthdog event will be execued when exceeding deadline happens.
+Unlike the standard in IEC 61131 - 3, if a event/task exceeded the deadline, the whole program will stop. In Akatosh, only the event/task itself will stop if it is a cotinouse event. But additionally, you can define a watchdog function as pass it when create a event. Then, the wacthdog event will be execued when exceeding deadline happens rather than stopping the event.
 
 ```py
 def watchdog():

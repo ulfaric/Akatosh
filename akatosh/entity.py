@@ -75,7 +75,7 @@ class Entity:
         """Called when the entity is terminated."""
         self._terminated = True
         for event in self.events:
-            event.cancel()
+            event.end()
         for resource in self.occupied_resources:
             resource.collect(self, inf)
         logger.debug(f"Entity {self} terminated.")

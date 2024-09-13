@@ -2,7 +2,7 @@
 
 `Akatosh` is a light-weighted disceret event simulation library. Unlike popular library `Simpy` which is progress-oriented and you have to write generator function for simulated events or events interaction, `Akatosh` is fully object-oriented that events are encapsulated as `InstantEvent`/`ContinousEvent` with states, priority and a life-cycle. The actual impact of events are simply regular python functions. You could create events all at once, or create event within event. In addition, `Akatosh` is async which means event that are happening at the same simulated time will be executed simultaneously for real, unless they have different priority.
 
-`Akatosh` also support `Resource`, provide all functionalities as it is in `Simpy` with extra utilities for telemetries collection and interaction with `Entity`. The `Entity` is unique to `Akatosh` which represents a abstract entity with a life-cycle, for example a follower. The `Entity` supports utility functions to interact with `Resource` and automatically releases all its occupied resources upon termination.
+`Akatosh` also support `Resource`, provide all functionalities as it is in `Simpy` with extra utilities and interaction with `Entity`. The `Entity` is unique to `Akatosh` which represents a abstract entity with a life-cycle, for example a follower. The `Entity` supports utility functions to interact with `Resource` and automatically releases all its occupied resources upon termination.
 
 You probably already noticed that `Akatosh` is the name of "Dragon God of Time" in elder scroll serie, therefore the singleton class `Mundus` is the core of the simulation. The `Mundus` will schedule the events, move forward time and engage async execution.
 
@@ -43,3 +43,11 @@ def user_event():
 # run simulation for 1.2s
 universe.simulate(1.2)
 ```
+
+## Update Log
+### 3.1.0
+- Remove time scale feature due to its complexity and issue for causing time desynchronization.
+- Rewrite the Mundus time property for better reliability in real-time mode.
+- Change to IEC 61131-3 standard implementation:
+  - Event will default to stop if deadline is exceeded and no watchdog function is provided.
+  - Event will not stop if watchdog function is provided, unless the watchdog cancel or end the event.

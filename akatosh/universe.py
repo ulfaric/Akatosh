@@ -22,7 +22,6 @@ class Universe:
     def __init__(self) -> None:
         """The simulation universe."""
         self._time_resolution = 3
-        self._time_scale = 1
         self._time_step = round(1 / pow(10, self.time_resolution), self.time_resolution)
         self._time = 0
         self._simulation_start_time = 0
@@ -36,18 +35,23 @@ class Universe:
     def simulate(self, till: float):
         """Simulate the universe until the given time."""
 
+        async def _start_pending_events():
+            if len(self.pending_events) != 0:
+                for event in self.pending_events:
+                    asyncio.create_task(event())
+                self.pending_events.clear()
+
         # Define the flow of time
         async def time_flow():
             """Flow of time."""
+            logger.info(f"Simulation started...")
             self._simulation_start_time = time.perf_counter()
             while self.time < till:
                 if self.paused:
                     await asyncio.sleep(0)
                     continue
                 logger.debug(f"Simulation time:\t{self.time}")
-                for event in self.pending_events:
-                    asyncio.create_task(event())
-                self.pending_events.clear()
+                await _start_pending_events()
                 if self.realtime:
                     iteration_start_time = (
                         time.perf_counter() - self.simulation_start_time
@@ -67,14 +71,13 @@ class Universe:
                     iteration_end_time = (
                         time.perf_counter() - self.simulation_start_time
                     )
-                    # update the time
-                    self._time += (iteration_end_time - iteration_start_time) * self.time_scale
                     logger.debug(
                         f"Iteration finished at Real Time: {iteration_end_time:0.6f}"
                     )
                     logger.debug(
                         f"FPS: {1/(iteration_end_time - iteration_start_time):0.6f}"
                     )
+                    logger.debug(f"Completion: {(self.time/till)*100:0.2f}%")
                     await asyncio.sleep(0)
 
                 else:
@@ -89,13 +92,12 @@ class Universe:
                     # wait for the time step
                     self._time += self.time_step
                     self._time = round(self.time, self.time_resolution)
+                    logger.debug(f"Completion: {(self.time/till)*100:0.2f}%")
                     await asyncio.sleep(0)
 
             self._simulation_end_time = time.perf_counter()
-            if self.realtime:
-                logger.info(
-                    f"Simulation completed in {round(self.simulation_end_time - self.simulation_start_time, 6)} seconds, exceeding real time by {round(((self.simulation_end_time - self.simulation_start_time - till)/till)*100,2)}%."
-                )
+            logger.debug(f"Simulation finished in {self._simulation_end_time - self._simulation_start_time}s")
+            logger.info(f"Simulation completed.")
 
         return time_flow()
 
@@ -106,15 +108,6 @@ class Universe:
     def disable_realtime(self):
         """Disable the real time simulation."""
         self._realtime = False
-
-    def set_timescale(self, scale: float):
-        """Set the time scale of the simulation. Default is 1. Only works in real time mode."""
-        if not self.realtime:
-            logger.warning("Time scale only works in real time mode.")
-            return
-        self.pause()
-        self._time_scale = scale
-        self.resume()
 
     def pause(self):
         """Pause the simulation."""
@@ -139,7 +132,10 @@ class Universe:
     @property
     def time(self):
         """Return the current time."""
-        return self._time
+        if Mundus.realtime:
+            return time.perf_counter() - self._simulation_start_time
+        else:
+            return self._time
 
     @property
     def time_resolution(self):
@@ -190,11 +186,6 @@ class Universe:
     def simulation_end_time(self):
         """The time when the simulation ended."""
         return self._simulation_end_time
-
-    @property
-    def time_scale(self):
-        """The time scale of the simulation. Default is 1. Only works in real time mode."""
-        return self._time_scale
 
     @property
     def paused(self):

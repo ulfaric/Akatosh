@@ -6,6 +6,38 @@ from . import logger
 from .universe import Mundus
 
 
+class IEC61131Exception(Exception):
+    """Exception raised when an event exceeds its deadline."""
+
+    def __init__(self, message: str):
+        self.message = message
+        super().__init__(self.message)
+
+
+class ExceedWaitingTime(IEC61131Exception):
+    """Exception raised when an event exceeds its waiting time."""
+
+    def __init__(self, message: str):
+        self.message = message
+        super().__init__(self.message)
+
+
+class ExceedExecutionTime(IEC61131Exception):
+    """Exception raised when an event exceeds its execution time."""
+
+    def __init__(self, message: str):
+        self.message = message
+        super().__init__(self.message)
+
+
+class ExceedEventDuration(IEC61131Exception):
+    """Exception raised when an event exceeds its duration."""
+
+    def __init__(self, message: str):
+        self.message = message
+        super().__init__(self.message)
+
+
 class Event:
 
     def __init__(
@@ -13,7 +45,7 @@ class Event:
         at: float | Event,
         till: float | Event,
         action: Callable,
-        step: float = Mundus.time_step,
+        step: None | float = None,
         label: Optional[str] = None,
         once: bool = False,
         priority: int = 0,
@@ -39,11 +71,17 @@ class Event:
         self._acted = False
         self._ended = False
         self._paused = False
+        self._cancelled = False
         self._label = label
         self._once = once
         self._priority = priority
-        self._step = step
-        self._watchdog = watchdog
+        if step is None:
+            self._step = Mundus.time_step
+            self._besteffort = True
+        else:
+            self._step = step
+            self._besteffort = False
+        self._watchdog = watchdog if watchdog else lambda: self.cancel()
         self._next = 0
         Mundus.pending_events.append(self)
         if self.priority > Mundus.max_event_priority:
@@ -52,110 +90,119 @@ class Event:
     async def __call__(self) -> Any:
         """Make the event callable, so it can be awaited like a coroutine."""
         while True:
-
-            if self.ended == True:
-                return
-
-            while True:
-                if self.priority == Mundus.current_event_priority:
-                    break
-                else:
-                    await asyncio.sleep(0)
-
-            if self.started == False:
-                if isinstance(self.at, Event):
-                    if self.at.ended == True:
-                        self._started = True
-                        self._next = Mundus.time
-                        logger.debug(f"Event {self} started at {Mundus.time}.")
-                else:
-                    if self.at <= Mundus.time:
-                        self._started = True
-                        self._next = Mundus.time
-                        logger.debug(f"Event {self} started at {Mundus.time}.")
-
-            if (
-                self.started == True
-                and self.ended == False
-                and self.paused == False
-                and self.next <= Mundus.time
-            ):
-                # Following IEC 61131 -3, if a event exceeded its deadline, it should be logged and not executed further. Real-time mode only.
-                _waiting_duration = Mundus.time - self.next
-                if (
-                    Mundus.realtime
-                    and Mundus.time_scale == 1
-                    and self.step != Mundus.time_step
-                    and _waiting_duration > self.step
-                ):
-                    logger.error(
-                        f"Event {self} waiting time exceeded deadline by {_waiting_duration-self.step} seconds."
-                    )
-                    if self.watchdog is not None:
-                        self.watchdog()
+            try:
+                if self.ended == True or self.cancelled == True:
                     return
-                _execution_start_time = time.perf_counter()
-                if asyncio.iscoroutinefunction(self._action):
-                    await self._action()
-                else:
-                    self._action()
-                _execution_end_time = time.perf_counter()
-                _execution_duration = _execution_end_time - _execution_start_time
-                if (
-                    Mundus.realtime
-                    and Mundus.time_scale == 1
-                    and self.step != Mundus.time_step
-                    and _execution_duration > self.step
-                ):
-                    logger.error(
-                        f"Event {self} execution exceeded deadline by {_execution_duration-self.step} seconds."
-                    )
-                    if self.watchdog is not None:
-                        self.watchdog()
-                    return
-                _event_duration = _waiting_duration + _execution_duration
-                if (
-                    Mundus.realtime
-                    and Mundus.time_scale == 1
-                    and self.step != Mundus.time_step
-                    and _event_duration > self.step
-                ):
-                    logger.error(
-                        f"Event {self} exceeded deadline by {_event_duration-self.step} seconds."
-                    )
-                    if self.watchdog is not None:
-                        self.watchdog()
-                    return
-                self._acted = True
-                if Mundus.realtime:
-                    if self.step != Mundus.time_step:
-                        self._next = round(
-                            Mundus.time + self.step,
-                            Mundus.time_resolution,
-                        )
+
+                while True:
+                    if self.priority == Mundus.current_event_priority:
+                        break
                     else:
-                        self._next = Mundus.time
-                else:
-                    self._next += max(Mundus.time_step, self.step)
-                    self._next = round(self._next, Mundus.time_resolution)
-                logger.debug(f"Event {self} acted at {Mundus.time}.")
-                if self._once == True:
-                    self._ended = True
-                    logger.debug(f"Event {self} ended at {Mundus.time}.")
-                    return
+                        await asyncio.sleep(0)
 
-            if self.ended == False:
-                if isinstance(self.till, Event):
-                    if self.till.ended == True:
+                if self.started == False:
+                    if isinstance(self.at, Event):
+                        if self.at.ended == True:
+                            self._started = True
+                            self._next = Mundus.time
+                            logger.debug(f"Event {self} started at {Mundus.time}.")
+                    else:
+                        if self.at <= Mundus.time:
+                            self._started = True
+                            self._next = Mundus.time
+                            logger.debug(f"Event {self} started at {Mundus.time}.")
+
+                if (
+                    self.started == True
+                    and self.ended == False
+                    and self.cancelled == False
+                    and self.paused == False
+                    and self.next <= Mundus.time
+                ):
+                    # Following IEC 61131 -3, if a event exceeded its deadline, it should be logged and not executed further. Real-time mode only.
+                    _waiting_duration = Mundus.time - self.next
+                    if not self.besteffort and _waiting_duration > self.step:
+                        logger.warning(
+                            f"Event {self} waiting time exceeded deadline by {_waiting_duration-self.step} seconds."
+                        )
+                        if self.watchdog is not None:
+                            self.watchdog()
+                        raise ExceedWaitingTime(
+                            f"Event {self} waiting time exceeded deadline by {_waiting_duration-self.step} seconds."
+                        )
+
+                    # Execute the event
+                    _execution_start_time = time.perf_counter()
+                    if asyncio.iscoroutinefunction(self._action):
+                        await self._action()
+                    else:
+                        self._action()
+                    _execution_end_time = time.perf_counter()
+                    _execution_duration = _execution_end_time - _execution_start_time
+                    # Following IEC 61131 -3, if a event exceeded its execution time, it should be logged and not executed further. Real-time mode only.
+                    if not self.besteffort and _execution_duration > self.step:
+                        logger.error(
+                            f"Event {self} execution exceeded deadline by {_execution_duration-self.step} seconds."
+                        )
+                        if self.watchdog is not None:
+                            self.watchdog()
+                        raise ExceedExecutionTime(
+                            f"Event {self} execution exceeded deadline by {_execution_duration-self.step} seconds."
+                        )
+
+                    # Following IEC 61131 -3, if a event exceeded its duration, it should be logged and not executed further. Real-time mode only.
+                    _event_duration = _waiting_duration + _execution_duration
+                    if not self.besteffort and _event_duration > self.step:
+                        logger.error(
+                            f"Event {self} exceeded deadline by {_event_duration-self.step} seconds."
+                        )
+                        if self.watchdog is not None:
+                            self.watchdog()
+                        raise ExceedEventDuration(
+                            f"Event {self} exceeded deadline by {_event_duration-self.step} seconds."
+                        )
+
+                    # Update the next time the event should act
+                    self._acted = True
+                    if Mundus.realtime:
+                        if self.besteffort:
+                            self._next = Mundus.time
+                        else:
+                            self._next = round(
+                                Mundus.time + self.step,
+                                Mundus.time_resolution,
+                            )
+                    else:
+                        self._next += max(Mundus.time_step, self.step)
+                        self._next = round(self._next, Mundus.time_resolution)
+                    logger.debug(f"Event {self} acted at {Mundus.time}.")
+
+                    # If the event should only happen once, mark it as ended
+                    if self._once == True:
                         self._ended = True
                         logger.debug(f"Event {self} ended at {Mundus.time}.")
                         return
-                else:
-                    if self.till <= Mundus.time:
-                        self._ended = True
-                        logger.debug(f"Event {self} ended at {Mundus.time}.")
-                        return
-            await asyncio.sleep(0)
+
+                # Set the event as ended if it has a till time and it is reached, or its ending event has ended
+                if self.ended == False:
+                    if isinstance(self.till, Event):
+                        if self.till.ended == True:
+                            self._ended = True
+                            logger.debug(f"Event {self} ended at {Mundus.time}.")
+                            return
+                    else:
+                        if self.till <= Mundus.time:
+                            self._ended = True
+                            logger.debug(f"Event {self} ended at {Mundus.time}.")
+                            return
+                # return control to the event loop
+                await asyncio.sleep(0)
+            except ExceedWaitingTime as e:
+                await asyncio.sleep(0)
+            except ExceedExecutionTime as e:
+                await asyncio.sleep(0)
+            except ExceedEventDuration as e:
+                await asyncio.sleep(0)
 
     def __str__(self) -> str:
         """Return the label of the event if it has one, otherwise return the id of the event."""
@@ -163,9 +210,14 @@ class Event:
             return f"Event {id(self)}"
         return self.label
 
+    def end(self):
+        """End the event."""
+        self._ended = True
+        logger.debug(f"Event {self} ended.")
+
     def cancel(self):
         """Cancel the event."""
-        self._ended = True
+        self._cancelled = True
         logger.debug(f"Event {self} cancelled.")
 
     def pause(self):
@@ -176,6 +228,7 @@ class Event:
     def resume(self):
         """Resume the event."""
         self._paused = False
+        self._next = Mundus.time
         logger.debug(f"Event {self} resumed.")
 
     @property
@@ -197,6 +250,11 @@ class Event:
     def ended(self):
         """Return whether the event has ended or not."""
         return self._ended
+
+    @property
+    def cancelled(self):
+        """Return whether the event has been cancelled or not."""
+        return self._cancelled
 
     @property
     def paused(self):
@@ -232,6 +290,11 @@ class Event:
     def watchdog(self):
         """Return the watchdog of the event, which is a function that is called when the event exceeds its deadline in real-time mode."""
         return self._watchdog
+
+    @property
+    def besteffort(self) -> bool:
+        """Returns true if the event is set as best-effort"""
+        return self._besteffort
 
 
 def event(
