@@ -1,6 +1,6 @@
 import asyncio
-from Akatosh.event import event
-from Akatosh.universe import Mundus
+from akatosh.event import event
+from akatosh.universe import Mundus
 
 
 @event(0.5, 0.5)

@@ -1,8 +1,8 @@
 import asyncio
 import logging
-from Akatosh.event import event
-from Akatosh.universe import Mundus
-from Akatosh import logger
+from akatosh.event import event
+from akatosh.universe import Mundus
+from akatosh import logger
 
 
 @event(at = 1, till = 1.5)

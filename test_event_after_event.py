@@ -2,9 +2,9 @@ import asyncio
 import logging
 from math import inf
 import time
-import Akatosh
-from Akatosh.event import Event
-from Akatosh.universe import Mundus
+import akatosh
+from akatosh.event import Event
+from akatosh.universe import Mundus
 
 def watchdog():
     print(f"Watchdog at {Mundus.time}!")
@@ -19,7 +19,7 @@ async def pause_and_resume():
     Mundus.set_timescale(1)
 
 Mundus.enable_realtime()
-Akatosh.logger.setLevel(logging.INFO)
+akatosh.logger.setLevel(logging.INFO)
 
 async def main():
     await asyncio.gather(Mundus.simulate(inf), pause_and_resume())
