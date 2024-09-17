@@ -300,7 +300,7 @@ class Event:
 def event(
     at: float | Event,
     till: float | Event,
-    step: float = Mundus.time_step,
+    step: float | None = None,
     label: Optional[str] = None,
     once: bool = False,
     priority: int = 0,
