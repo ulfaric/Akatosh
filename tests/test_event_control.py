@@ -1,8 +1,8 @@
 import asyncio
 import logging
 import unittest
-from akatosh.event import Event
-from akatosh.universe import Mundus
+from Akatosh.event import Event
+from Akatosh.universe import Mundus
 
 
 class TestPauseEvent(unittest.TestCase):

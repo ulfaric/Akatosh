@@ -1,9 +1,9 @@
 import asyncio
 import logging
 import unittest
-import akatosh
-from akatosh.event import event
-from akatosh.universe import Mundus
+import Akatosh
+from Akatosh.event import event
+from Akatosh.universe import Mundus
 
 
 class TestEventPriority(unittest.TestCase):
@@ -14,7 +14,7 @@ class TestEventPriority(unittest.TestCase):
 
     def test_event_priority(self):
         Mundus.enable_realtime()
-        akatosh.logger.setLevel(logging.INFO)
+        Akatosh.logger.setLevel(logging.INFO)
 
         @event(1, 1, label="Event 2", once=True, priority=2)
         def event2():

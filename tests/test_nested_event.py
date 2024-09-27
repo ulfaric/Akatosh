@@ -1,8 +1,8 @@
 import asyncio
 import logging
 import unittest
-from akatosh.event import event
-from akatosh.universe import Mundus
+from Akatosh.event import event
+from Akatosh.universe import Mundus
 
 
 class TestEventCreateEvent(unittest.TestCase):

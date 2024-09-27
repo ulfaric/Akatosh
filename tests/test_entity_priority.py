@@ -1,7 +1,7 @@
 import asyncio
 import unittest
-from akatosh.entity import Entity
-from akatosh.universe import Mundus
+from Akatosh.entity import Entity
+from Akatosh.universe import Mundus
 
 
 class TestEntityPriority(unittest.TestCase):

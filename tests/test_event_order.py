@@ -3,9 +3,9 @@ import logging
 from math import inf
 import time
 import unittest
-import akatosh
-from akatosh.event import Event
-from akatosh.universe import Mundus
+import Akatosh
+from Akatosh.event import Event
+from Akatosh.universe import Mundus
 
 
 class TestEventAfterEvent(unittest.TestCase):
@@ -32,7 +32,7 @@ class TestEventAfterEvent(unittest.TestCase):
         world = Event(hello, inf, self.world_callback, 0.005)
 
         Mundus.enable_realtime()
-        akatosh.logger.setLevel(logging.INFO)
+        Akatosh.logger.setLevel(logging.INFO)
 
         async def run_simulation():
             await asyncio.gather(Mundus.simulate(10))

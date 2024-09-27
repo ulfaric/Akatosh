@@ -136,7 +136,7 @@ class Event:
                     if asyncio.iscoroutinefunction(self._action):
                         await self._action()
                     else:
-                        self._action()
+                        await asyncio.to_thread(self._action)
                     _execution_end_time = time.perf_counter()
                     _execution_duration = _execution_end_time - _execution_start_time
                     # Following IEC 61131 -3, if a event exceeded its execution time, it should be logged and not executed further. Real-time mode only.
