@@ -7,7 +7,7 @@ logger = logging.getLogger("Akatosh")
 stream_handler = logging.StreamHandler()
 
 # Define log colors
-cformat = "%(log_color)s%(levelname)s:\t%(message)s"
+cformat = "%(log_color)s%(levelname)s%(reset)s:    %(log_color)s%(message)s"
 colors = {
     "DEBUG": "cyan",
     "INFO": "green",

@@ -45,7 +45,10 @@ universe.simulate(1.2)
 ```
 
 ## Update Log
-### 3.1.0
+### 3.1.4
+- Fix the logger format.
+
+### 3.1.3
 - Remove time scale feature due to its complexity and issue for causing time desynchronization.
 - Rewrite the Mundus time property for better reliability in real-time mode.
 - Change to IEC 61131-3 standard implementation:
