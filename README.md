@@ -45,6 +45,9 @@ universe.simulate(1.2)
 ```
 
 ## Update Log
+### 3.1.5
+- Fix the entity event creation bug.
+
 ### 3.1.4
 - Fix the logger format.
 

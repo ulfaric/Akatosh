@@ -75,7 +75,7 @@ class Entity:
         """Called when the entity is terminated."""
         self._terminated = True
         for event in self.events:
-            event.end()
+            event.cancel()
         for resource in self.occupied_resources:
             resource.collect(self, inf)
         logger.debug(f"Entity {self} terminated.")
@@ -84,10 +84,11 @@ class Entity:
         self,
         at: float | Event,
         till: float | Event,
-        step: float = Mundus.time_step,
+        step: float | None = None,
         label: Optional[str] = None,
         once: bool = False,
         priority: int = 0,
+        watchdog: Optional[Callable] = None,
     ):
         """Decorator to add an event to the entity."""
 
@@ -114,6 +115,7 @@ class Entity:
                     label=label,
                     once=once,
                     priority=priority,
+                    watchdog=watchdog,
                 )
                 self.events.append(event)
                 logger.debug(f"Event {event} added to entity {self}.")
